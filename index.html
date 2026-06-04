@@ -436,21 +436,26 @@ textarea{min-height:96px;resize:vertical}
         <textarea id="f-work-details"></textarea>
       </div>
 
-      <!-- ── CHANGE 3: Additional Requirements section ── -->
+      <!-- ── Additional Requirements section ── -->
       <div class="fg">
         <label>Additional Requirements <span style="font-weight:400;color:var(--muted)">(Optional)</span></label>
         <div class="checkbox-grid">
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Food &amp; Refreshments"/>🍽️ Food &amp; Refreshments</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Stationery"/>✏️ Stationery</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="TV / Projector"/>📺 TV / Projector</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Wi-Fi"/>📶 Wi-Fi</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Extra Chairs / Tables"/>🪑 Extra Chairs / Tables</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Video Conferencing"/>💻 Video Conferencing</label>
-          <label class="checkbox-pill" id="req-other-pill" onclick="toggleReqOther()" style="cursor:pointer"><input type="checkbox" name="f-req" value="Other" id="req-other-cb" style="pointer-events:none"/>➕ Other</label>
+          <label class="checkbox-pill" onclick="toggleReq('food')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Food &amp; Refreshments" id="req-cb-food" style="pointer-events:none"/>🍽️ Food &amp; Refreshments</label>
+          <label class="checkbox-pill" onclick="toggleReq('stationery')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Stationery" id="req-cb-stationery" style="pointer-events:none"/>✏️ Stationery</label>
+          <label class="checkbox-pill" onclick="toggleReq('tv')" style="cursor:pointer"><input type="checkbox" name="f-req" value="TV / Projector" id="req-cb-tv" style="pointer-events:none"/>📺 TV / Projector</label>
+          <label class="checkbox-pill" onclick="toggleReq('wifi')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Wi-Fi" id="req-cb-wifi" style="pointer-events:none"/>📶 Wi-Fi</label>
+          <label class="checkbox-pill" onclick="toggleReq('chairs')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Extra Chairs / Tables" id="req-cb-chairs" style="pointer-events:none"/>🪑 Extra Chairs / Tables</label>
+          <label class="checkbox-pill" onclick="toggleReq('vc')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Video Conferencing" id="req-cb-vc" style="pointer-events:none"/>💻 Video Conferencing</label>
+          <label class="checkbox-pill" onclick="toggleReq('other')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Other" id="req-cb-other" style="pointer-events:none"/>➕ Other</label>
         </div>
-        <div id="req-other-wrap" class="hidden" style="margin-top:10px">
-          <textarea id="f-req-other" rows="3" placeholder="Describe your additional requirement…" style="resize:vertical;min-height:80px"></textarea>
-        </div>
+        <!-- per-item detail textareas -->
+        <div id="req-wrap-food"       class="hidden" style="margin-top:8px"><textarea id="req-note-food"       rows="2" placeholder="Details for Food &amp; Refreshments…"  style="resize:vertical;min-height:64px"></textarea></div>
+        <div id="req-wrap-stationery" class="hidden" style="margin-top:8px"><textarea id="req-note-stationery" rows="2" placeholder="Details for Stationery…"                style="resize:vertical;min-height:64px"></textarea></div>
+        <div id="req-wrap-tv"         class="hidden" style="margin-top:8px"><textarea id="req-note-tv"         rows="2" placeholder="Details for TV / Projector…"            style="resize:vertical;min-height:64px"></textarea></div>
+        <div id="req-wrap-wifi"       class="hidden" style="margin-top:8px"><textarea id="req-note-wifi"       rows="2" placeholder="Details for Wi-Fi…"                     style="resize:vertical;min-height:64px"></textarea></div>
+        <div id="req-wrap-chairs"     class="hidden" style="margin-top:8px"><textarea id="req-note-chairs"     rows="2" placeholder="Details for Extra Chairs / Tables…"     style="resize:vertical;min-height:64px"></textarea></div>
+        <div id="req-wrap-vc"         class="hidden" style="margin-top:8px"><textarea id="req-note-vc"         rows="2" placeholder="Details for Video Conferencing…"        style="resize:vertical;min-height:64px"></textarea></div>
+        <div id="req-wrap-other"      class="hidden" style="margin-top:8px"><textarea id="req-note-other"      rows="2" placeholder="Describe your additional requirement…"  style="resize:vertical;min-height:64px"></textarea></div>
       </div>
 
       <div class="btn-row">
@@ -984,10 +989,15 @@ function resetForm(){
   document.getElementById('f-type').value='';
   document.getElementById('f-type-other').value='';
   document.getElementById('other-type-wrap').classList.add('hidden');
-  document.getElementById('f-req-other').value='';
-  document.getElementById('req-other-wrap').classList.add('hidden');
+  ['food','stationery','tv','wifi','chairs','vc','other'].forEach(function(key){
+    var cb = document.getElementById('req-cb-' + key);
+    if(cb) cb.checked = false;
+    var wrap = document.getElementById('req-wrap-' + key);
+    if(wrap) wrap.classList.add('hidden');
+    var note = document.getElementById('req-note-' + key);
+    if(note) note.value = '';
+  });
   clearSelectedLabs();
-  document.querySelectorAll('input[name="f-req"]').forEach(function(el){el.checked=false;});
   document.querySelectorAll('.dur-card').forEach(function(c){c.classList.remove('selected');});
   document.getElementById('btn-n1').disabled=true;
   for(var i=1;i<=6;i++){var e=document.getElementById('step-'+i);if(e)e.classList.add('hidden');}
@@ -1020,22 +1030,31 @@ function toggleOtherType(val){
   if(val !== 'Other') document.getElementById('f-type-other').value = '';
 }
 
-function toggleReqOther(){
-  var cb = document.getElementById('req-other-cb');
+var REQ_KEYS = ['food','stationery','tv','wifi','chairs','vc','other'];
+
+function toggleReq(key){
+  var cb   = document.getElementById('req-cb-' + key);
   cb.checked = !cb.checked;
-  var wrap = document.getElementById('req-other-wrap');
+  var wrap = document.getElementById('req-wrap-' + key);
   wrap.classList.toggle('hidden', !cb.checked);
-  if(!cb.checked){
-    document.getElementById('f-req-other').value = '';
+  if(cb.checked){
+    setTimeout(function(){ document.getElementById('req-note-' + key).focus(); }, 50);
   } else {
-    setTimeout(function(){ document.getElementById('f-req-other').focus(); }, 50);
+    document.getElementById('req-note-' + key).value = '';
   }
 }
 
 function getSelectedReqs(){
-  var reqs = Array.from(document.querySelectorAll('input[name="f-req"]:checked')).map(function(el){ return el.value; });
-  var otherText = (document.getElementById('f-req-other').value || '').trim();
-  return reqs.map(function(r){ return (r === 'Other' && otherText) ? 'Other: ' + otherText : r; });
+  var out = [];
+  REQ_KEYS.forEach(function(key){
+    var cb = document.getElementById('req-cb-' + key);
+    if(cb && cb.checked){
+      var note = (document.getElementById('req-note-' + key).value || '').trim();
+      var label = cb.value;
+      out.push(note ? label + ': ' + note : label);
+    }
+  });
+  return out;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
