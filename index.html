@@ -446,10 +446,10 @@ textarea{min-height:96px;resize:vertical}
           <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Wi-Fi"/>📶 Wi-Fi</label>
           <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Extra Chairs / Tables"/>🪑 Extra Chairs / Tables</label>
           <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Video Conferencing"/>💻 Video Conferencing</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Other" onchange="toggleReqOther(this.checked)"/>➕ Other</label>
+          <label class="checkbox-pill" id="req-other-pill" onclick="toggleReqOther()" style="cursor:pointer"><input type="checkbox" name="f-req" value="Other" id="req-other-cb" style="pointer-events:none"/>➕ Other</label>
         </div>
         <div id="req-other-wrap" class="hidden" style="margin-top:10px">
-          <input id="f-req-other" type="text" placeholder="Describe your additional requirement…"/>
+          <textarea id="f-req-other" rows="3" placeholder="Describe your additional requirement…" style="resize:vertical;min-height:80px"></textarea>
         </div>
       </div>
 
@@ -1020,9 +1020,16 @@ function toggleOtherType(val){
   if(val !== 'Other') document.getElementById('f-type-other').value = '';
 }
 
-function toggleReqOther(checked){
-  document.getElementById('req-other-wrap').classList.toggle('hidden', !checked);
-  if(!checked) document.getElementById('f-req-other').value = '';
+function toggleReqOther(){
+  var cb = document.getElementById('req-other-cb');
+  cb.checked = !cb.checked;
+  var wrap = document.getElementById('req-other-wrap');
+  wrap.classList.toggle('hidden', !cb.checked);
+  if(!cb.checked){
+    document.getElementById('f-req-other').value = '';
+  } else {
+    setTimeout(function(){ document.getElementById('f-req-other').focus(); }, 50);
+  }
 }
 
 function getSelectedReqs(){
