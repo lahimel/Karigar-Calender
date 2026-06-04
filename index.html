@@ -807,7 +807,7 @@ textarea{min-height:96px;resize:vertical}
           <span class="ai-arrow">→</span>
         </button>
       </div>
-      <div class="ts-nav-hint">Select an option above to continue</div>
+      <div class="ts-nav-hint" id="nav-hint">Select an option above to continue</div>
     </div>
 
   </div>
@@ -961,16 +961,16 @@ textarea{min-height:96px;resize:vertical}
         <div class="fg-row">
           <div class="fg">
             <label>Full Name *</label>
-            <input id="f-name" type="text" placeholder="Your full name"/>
+            <input id="f-name" type="text" autocomplete="name" placeholder="Your full name"/>
           </div>
           <div class="fg">
             <label>Phone Number *</label>
-            <input id="f-phone" type="tel" inputmode="numeric" placeholder="10-digit mobile number"/>
+            <input id="f-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"/>
           </div>
         </div>
         <div class="fg">
           <label>Email Address *</label>
-          <input id="f-email" type="email" placeholder="you@example.com"/>
+          <input id="f-email" type="email" autocomplete="email" placeholder="you@example.com"/>
         </div>
 
         <!-- Session Details -->
@@ -1191,6 +1191,9 @@ function goStep(n){
   curStep=n;
   if(n===2) initStep2();
   if(n===3) setupTime();
+  // Scroll to top of card so new step content is immediately visible
+  var card=document.getElementById('tab-book');
+  if(card) card.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function initStep2(){
@@ -1690,6 +1693,10 @@ function showSection(which, cardEl) {
     setTimeout(checkStatus, 80);
   }
 
+  // Update the nav hint now that an option is active
+  var hint = document.getElementById('nav-hint');
+  if (hint) hint.textContent = 'Scroll down to continue ↓';
+
   // Delegate to the existing switchTab() — tab buttons are hidden but still in DOM
   var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabKey + '"]');
   if (tabBtn) switchTab(tabKey, tabBtn);
@@ -1707,6 +1714,8 @@ function showSection(which, cardEl) {
 /** Scrolls back to the top shell so the user can choose a different action */
 function goToTop() {
   document.querySelector('.top-shell').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  var hint = document.getElementById('nav-hint');
+  if (hint) hint.textContent = 'Select an option above to continue';
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
