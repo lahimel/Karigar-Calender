@@ -36,8 +36,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:
 .hero h1{font-size:1.8rem;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
 .hero h1 em{font-style:normal;color:#f5c842}
 .hero p{font-size:.83rem;opacity:.75;max-width:480px;margin:0 auto 14px;line-height:1.5}
-.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
-.chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:3px 11px;font-size:.69rem;font-weight:600}
 
 /* ─── LAYOUT ─── */
 .wrap{max-width:740px;margin:0 auto;padding:22px 16px 0}
@@ -263,12 +261,6 @@ textarea{min-height:96px;resize:vertical}
   <div class="hero-badge">🛠️ &nbsp;Karigar – School of Applied Learning</div>
   <h1>Book a <em>Skill Session</em></h1>
   <p>A flagship initiative by Lend A Hand India · Pune, Maharashtra<br>Hands-on vocational education — the "Disney Land of Skills"</p>
-  <div class="chips">
-    <div class="chip">⚡ Electrical</div><div class="chip">🪵 Carpentry</div>
-    <div class="chip">🔧 Plumbing</div><div class="chip">🎨 Painting</div>
-    <div class="chip">🌱 Landscaping</div><div class="chip">🚗 Auto</div>
-    <div class="chip">💻 IT</div><div class="chip">🍞 Baking</div>
-  </div>
 </div>
 
 <div class="wrap">
@@ -424,11 +416,12 @@ textarea{min-height:96px;resize:vertical}
       <div class="fg">
         <label>Select Lab * (choose one or more)</label>
         <div class="checkbox-grid" id="f-labs">
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="EE LAB"/>EE LAB</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="AI LAB"/>AI LAB</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Auto LAB"/>Auto LAB</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="GNAT LAB"/>GNAT LAB</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="FPT LAB"/>FPT LAB</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Agriculture Lab"/>Agriculture Lab</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Electrical Lab"/>Electrical Lab</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Engineering Lab"/>Engineering Lab</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Food Processing Lab"/>Food Processing Lab</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Healthcare Lab"/>Healthcare Lab</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Mechatronics Lab"/>Mechatronics Lab</label>
           <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="1st Floor"/>1st Floor</label>
           <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="2nd Floor"/>2nd Floor</label>
         </div>
@@ -436,7 +429,7 @@ textarea{min-height:96px;resize:vertical}
       </div>
       <div class="fg">
         <label>What is it about? *</label>
-        <textarea id="f-work-details" placeholder="e.g. Exposure visit in AI LAB and course is MSBSVET Electrical Wireman &amp; Automobile Course Batch - 2"></textarea>
+        <textarea id="f-work-details"></textarea>
       </div>
       <div class="btn-row">
         <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(3)">← Back</button>
