@@ -1,1067 +1,1090 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Karigar – Book a Skill Session</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#FAF6F0;
-  --surface:#ffffff;
-  --primary:#C96F53;
-  --primary-dark:#B25E44;
-  --primary-light:#FBF0EC;
-  --accent:#B8843F;
-  --accent-light:#FBF5EC;
-  --green:#5E7D5A;
-  --green-bg:#EBF0EA;
-  --red:#b91c1c;
-  --red-bg:#fee2e2;
-  --amber:#b45309;
-  --amber-bg:#fef3c7;
-  --text:#2C2A29;
-  --muted:#7A7571;
-  --border:#E8E2D9;
-  --shadow:0 2px 12px rgba(44,42,41,.06);
-  --shadow-md:0 6px 24px rgba(44,42,41,.10);
-}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:100vh;padding-bottom:60px;color:var(--text)}
+// ═══════════════════════════════════════════════════════════════════
+//  KARIGAR – BOOKING BACKEND  (Code.gs)
+//  Paste your deployed web app URL into the HTML's BACKEND_SCRIPT_URL
+// ═══════════════════════════════════════════════════════════════════
 
-/* ─── HERO ─── */
-.hero{background:linear-gradient(135deg,#9C4A33 0%,#C96F53 60%,#D98466 100%);padding:30px 20px 26px;text-align:center;color:white;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
-.hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:30px;padding:5px 15px;margin-bottom:14px;font-size:.75rem;font-weight:700;letter-spacing:.3px}
-.hero h1{font-size:1.8rem;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
-.hero h1 em{font-style:normal;color:#f5c842}
-.hero p{font-size:.83rem;opacity:.75;max-width:480px;margin:0 auto 14px;line-height:1.5}
+const OWNER_EMAIL  = 'sddronaldo@gmail.com';
+const SECRET_TOKEN = 'karigar_secret_2024';
+const SITE_URL     = 'https://sddronaldo-commits.github.io/Karigar-test/';
+const CALENDAR_ID  = 'c_f52c1786104054526a8c486e0767da89d6f225bad1974494ab17b5a99a487abe@group.calendar.google.com';
+var   SHEET_NAME   = 'Bookings';
+const TZ           = 'Asia/Kolkata';
+const MIN_LEAD_DAYS = 10;
 
-/* ─── LAYOUT ─── */
-.wrap{max-width:740px;margin:0 auto;padding:22px 16px 0}
+// ── Sheet value formatters ─────────────────────────────────────────────────────
+// Google Sheets stores date/time cells as JavaScript Date objects.
+// Time-only cells (e.g. "9:00 AM") become "Dec 30 1899 + time fraction".
+// NEVER use String() on these — always use Utilities.formatDate().
 
-/* ─── SETUP ALERT ─── */
-.setup-alert{background:#fffbeb;border:2px solid #f59e0b;border-radius:14px;padding:16px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start}
-.setup-alert .icon{font-size:1.4rem;flex-shrink:0;margin-top:1px}
-.setup-alert h3{font-size:.9rem;font-weight:700;color:#92400e;margin-bottom:4px}
-.setup-alert p{font-size:.8rem;color:#78350f;line-height:1.4}
-.setup-alert button{margin-top:8px;padding:6px 14px;background:#f59e0b;color:white;border:none;border-radius:8px;font-weight:700;font-size:.78rem;cursor:pointer;font-family:inherit}
-
-/* ─── TABS ─── */
-.tabs{display:flex;background:white;border-radius:14px;padding:5px;margin-bottom:18px;box-shadow:var(--shadow);gap:4px}
-.tab-btn{flex:1;padding:10px 6px;border:none;background:none;border-radius:10px;cursor:pointer;font-size:.82rem;font-family:inherit;font-weight:600;color:var(--muted);transition:all .2s;white-space:nowrap}
-.tab-btn.active{background:var(--primary);color:white}
-
-/* ─── CARD ─── */
-.card{background:var(--surface);border-radius:18px;padding:26px;box-shadow:var(--shadow)}
-
-/* ─── STEP INDICATOR ─── */
-.steps{display:flex;justify-content:space-between;margin-bottom:28px;position:relative}
-.steps::before{content:'';position:absolute;top:14px;left:8%;right:8%;height:2px;background:var(--border);z-index:0}
-.step{display:flex;flex-direction:column;align-items:center;gap:5px;z-index:1}
-.sc{width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;transition:all .3s}
-.step.active .sc{background:var(--primary);color:white;box-shadow:0 0 0 4px var(--primary-light)}
-.step.done .sc{background:#7DAB79;color:white}
-.sl{font-size:.62rem;color:var(--muted);text-align:center;font-weight:600}
-.step.active .sl{color:var(--primary);font-weight:700}
-.step.done .sl{color:#7DAB79}
-
-/* ─── STEP CONTENT ─── */
-.ttl{font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:5px}
-.sub{font-size:.82rem;color:var(--muted);margin-bottom:18px;line-height:1.4}
-
-/* ─── DURATION CARDS ─── */
-.dur-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
-.dur-card{border:2.5px solid var(--border);border-radius:16px;padding:20px 10px;text-align:center;cursor:pointer;transition:all .2s}
-.dur-card:hover{border-color:#D4A090;background:var(--primary-light)}
-.dur-card.selected{border-color:var(--primary);background:var(--primary-light)}
-.di{font-size:2rem;margin-bottom:8px}
-.dt{font-weight:700;color:var(--text);font-size:.92rem}
-.dur-card.selected .dt{color:var(--primary)}
-.dd{font-size:.71rem;color:var(--muted);margin-top:4px;line-height:1.4}
-
-/* ─── CALENDAR SECTION ─── */
-.cal-wrap{border:2px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
-.cal-head{background:linear-gradient(90deg,var(--primary-dark),var(--primary));padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
-.cal-head span{color:white;font-size:.82rem;font-weight:700}
-.cal-head small{color:rgba(255,255,255,.7);font-size:.7rem}
-.cal-frame{width:100%;height:480px;border:none;display:block;background:white}
-
-.date-box{background:var(--primary-light);border-radius:12px;padding:16px;margin-bottom:14px;border:1.5px solid #E8C5B8}
-.date-label{font-size:.82rem;font-weight:700;color:var(--primary);margin-bottom:9px}
-.date-input{width:100%;padding:11px 14px;border:2px solid #E8C5B8;border-radius:10px;font-size:.93rem;font-family:inherit;color:var(--text);background:white;outline:none;cursor:pointer}
-.date-input:focus{border-color:var(--primary)}
-.date-note{font-size:.72rem;color:var(--accent);font-weight:600;margin-top:7px;display:flex;align-items:center;gap:5px}
-
-.msg{border-radius:9px;padding:8px 12px;font-size:.79rem;font-weight:600;margin-top:8px}
-.msg-ok{background:var(--green-bg);color:var(--green)}
-.msg-err{background:var(--red-bg);color:var(--red)}
-.msg-warn{background:var(--amber-bg);color:var(--amber)}
-
-/* ─── DAY PANEL ─── */
-.day-panel{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
-.dp-head{background:#2C2A29;color:white;padding:11px 16px;font-size:.85rem;font-weight:700;display:flex;align-items:center;justify-content:space-between}
-.dp-head small{opacity:.6;font-size:.73rem;font-weight:400}
-.dp-body{background:#1A1816;padding:2px 0 4px}
-.dp-event{display:grid;grid-template-columns:4px 1fr auto;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #2C2A29}
-.dp-event:last-child{border:none}
-.dp-bar{border-radius:4px;align-self:stretch;min-height:38px}
-.bar-a{background:#7DAB79}
-.bar-p{background:#7BA7C2}
-.dp-name{color:#FAF6F0;font-weight:700;font-size:.85rem}
-.dp-meta{color:#9A9490;font-size:.74rem;margin-top:2px}
-.dp-badge{font-size:.67rem;font-weight:700;padding:3px 9px;border-radius:20px}
-.db-a{background:#7DAB79;color:white}
-.db-p{background:#7BA7C2;color:white}
-.dp-empty{color:#9A9490;font-style:italic;padding:13px 15px;font-size:.82rem}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.71rem;color:var(--muted);margin:6px 0 12px;align-items:center}
-.leg{display:flex;align-items:center;gap:5px}
-.leg-dot{width:10px;height:10px;border-radius:2px}
-
-/* ─── TIME PICKER ─── */
-.tp-card{border:2px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px}
-.tp-head{background:#FAF6F0;padding:10px 16px;border-bottom:1px solid var(--border);font-size:.8rem;color:var(--muted);font-weight:600}
-.tp-body{padding:18px 16px}
-.tp-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.tp-block{flex:1;min-width:190px;max-width:240px}
-.tp-lbl{font-size:.71rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;text-align:center}
-.spinners{display:flex;align-items:center;justify-content:center;gap:7px}
-.sg{display:flex;flex-direction:column;align-items:center;gap:4px}
-.sg-sub{font-size:.62rem;color:var(--muted);font-weight:600;text-transform:uppercase;height:14px}
-.spb{width:32px;height:32px;border:1.5px solid var(--border);border-radius:7px;background:white;cursor:pointer;font-size:.88rem;color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;transition:all .15s}
-.spb:hover{background:var(--primary-light);border-color:#D4A090}
-.spv{font-size:1.5rem;font-weight:800;color:var(--text);min-width:50px;text-align:center;background:#FAF6F0;border:2px solid var(--border);border-radius:9px;padding:7px 4px;line-height:1}
-.sc2{font-size:1.5rem;font-weight:700;color:var(--primary);margin:0 1px;align-self:center;padding-top:14px}
-.ap-row{display:flex;gap:5px;margin-top:5px;justify-content:center}
-.apb{padding:5px 12px;border:2px solid var(--border);border-radius:7px;background:white;cursor:pointer;font-weight:700;font-size:.8rem;color:var(--muted);transition:all .15s;font-family:inherit}
-.apb.on{background:var(--primary);color:white;border-color:var(--primary)}
-.tp-div{width:1px;background:var(--border);align-self:stretch;margin:0 4px}
-
-.range-box{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;background:#FBF0EC;border-radius:11px;padding:12px;flex-wrap:wrap}
-.rb{text-align:center}
-.rb-l{font-size:.63rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
-.rb-v{font-size:1rem;font-weight:800;color:var(--text)}
-.rb-arr{font-size:1.1rem;font-weight:700;color:var(--primary)}
-.rb-dur{background:var(--primary);color:white;border-radius:20px;padding:3px 12px;font-size:.74rem;font-weight:700}
-
-.presets{margin-top:14px}
-.pr-lbl{font-size:.74rem;font-weight:700;color:#A09A94;margin-bottom:7px}
-.pr-row{display:flex;flex-wrap:wrap;gap:6px}
-.pr-btn{padding:5px 11px;border:1.5px solid var(--border);border-radius:20px;background:white;cursor:pointer;font-size:.74rem;font-weight:600;color:#5A5450;transition:all .15s;font-family:inherit}
-.pr-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
-.pr-btn.on{background:var(--primary);color:white;border-color:var(--primary)}
-
-/* ─── FORM ─── */
-.fg{margin-bottom:14px}
-label{display:block;font-size:.81rem;font-weight:700;color:#4A4644;margin-bottom:5px}
-input,select,textarea{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:10px;font-size:.9rem;outline:none;transition:border .2s;font-family:inherit;color:var(--text);background:white}
-input:focus,select:focus,textarea:focus{border-color:var(--primary)}
-textarea{min-height:96px;resize:vertical}
-.checkbox-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-.checkbox-pill{display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--border);border-radius:12px;background:white;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--text)}
-.checkbox-pill input{width:auto;flex:0 0 auto;margin:0;padding:0;border:none;accent-color:var(--primary)}
-.checkbox-pill:has(input:checked){border-color:var(--primary);background:var(--primary-light)}
-.field-help{font-size:.73rem;color:var(--muted);margin-top:6px}
-.date-tile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:10px;margin:14px 0 10px}
-.date-tile{border:2px solid var(--border);border-radius:14px;background:white;padding:10px 8px;text-align:center;cursor:pointer;transition:all .2s}
-.date-tile:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
-.date-tile small{display:block;font-size:.67rem;color:var(--muted);font-weight:700;margin-bottom:3px}
-.date-tile strong{display:block;font-size:1rem;color:var(--text);margin-bottom:4px}
-.date-tile span{display:block;font-size:.68rem;font-weight:700}
-.date-tile.available{background:#EBF0EA;border-color:#B8CEBA}
-.date-tile.available span{color:#5E7D5A}
-.date-tile.pending{background:#fffbeb;border-color:#fcd34d}
-.date-tile.pending span{color:#92400e}
-.date-tile.booked{background:#fef2f2;border-color:#fca5a5}
-.date-tile.booked span{color:#991b1b}
-.date-tile.selected{box-shadow:0 0 0 3px var(--primary-light);border-color:var(--primary)}
-
-/* ─── BUTTONS ─── */
-.btn{padding:11px 20px;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
-.btn-p{background:var(--primary);color:white;width:100%}
-.btn-p:hover:not(:disabled){background:var(--primary-dark)}
-.btn-p:disabled{background:#E8B9A8;cursor:not-allowed}
-.btn-s{background:#FAF6F0;color:#5A5450;border:2px solid var(--border)}
-.btn-s:hover{background:#F0ECE6}
-.btn-row{display:flex;gap:10px;margin-top:20px}
-.btn-accent{background:var(--accent);color:white;border:none;border-radius:10px;padding:10px 20px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;transition:all .2s}
-.btn-accent:hover{background:#A07234}
-
-/* ─── SUMMARY ─── */
-.summ{background:#FAF6F0;border-radius:11px;padding:15px;margin-bottom:15px}
-.sr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:.87rem;border-bottom:1px solid #E8E2D9}
-.sr:last-child{border:none}
-.sl2{color:var(--muted)}
-.sv{font-weight:700;color:var(--text);text-align:right}
-.pill{border-radius:20px;padding:2px 11px;font-size:.77rem;font-weight:700}
-.pill-p{background:var(--primary-light);color:var(--primary)}
-.pill-t{background:var(--green-bg);color:var(--green)}
-
-/* ─── SUCCESS ─── */
-.sbox{text-align:center;padding:16px 0}
-.sbox h2{font-size:1.4rem;font-weight:800;color:var(--text);margin:12px 0 7px}
-.sbox p{color:var(--muted);font-size:.86rem;margin-bottom:3px;line-height:1.5}
-.bid{display:inline-block;background:var(--primary-light);color:var(--primary);padding:8px 18px;border-radius:8px;font-weight:800;margin:11px 0;font-size:.92rem;letter-spacing:2px;border:2px dashed #E8C5B8}
-
-/* ─── STATUS CARDS ─── */
-.stcard{background:#FAF6F0;border-radius:12px;padding:16px;margin-top:12px;border:1.5px solid var(--border)}
-.stcard-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.stb{display:inline-block;padding:3px 12px;border-radius:20px;font-weight:700;font-size:.76rem}
-.stb-Pending{background:var(--amber-bg);color:var(--amber)}
-.stb-Approved{background:var(--green-bg);color:var(--green)}
-.stb-Declined{background:var(--red-bg);color:var(--red)}
-.stb-Rescheduled{background:#F0ECE6;color:#7A7571}
-.stb-Cancelled{background:#e2e8f0;color:#475569}
-.stmsg{margin-top:10px;padding:9px 13px;border-radius:8px;font-weight:600;font-size:.83rem}
-.sm-a{background:var(--green-bg);color:var(--green)}
-.sm-d{background:var(--red-bg);color:var(--red)}
-.sm-p{background:var(--amber-bg);color:var(--amber)}
-
-/* ─── RESCHEDULE ─── */
-.reschedule-box{margin-top:14px;border-top:1.5px dashed var(--border);padding-top:14px}
-.reschedule-box h4{font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:10px}
-.reschedule-form{background:var(--accent-light);border-radius:10px;padding:14px;border:1.5px solid #e8c97a}
-.reschedule-form label{color:#78350f}
-.reschedule-form input{border-color:#e8c97a}
-.reschedule-form input:focus{border-color:var(--accent)}
-
-/* ─── SETUP TAB ─── */
-.setup-steps{counter-reset:step}
-.setup-step{display:flex;gap:14px;margin-bottom:20px;align-items:flex-start}
-.setup-step::before{counter-increment:step;content:counter(step);min-width:32px;height:32px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0;margin-top:2px}
-.setup-step h3{font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:5px}
-.setup-step p{font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:6px}
-.setup-step code{background:#FAF6F0;border:1px solid #E8E2D9;border-radius:5px;padding:2px 7px;font-size:.77rem;color:#B25E44;word-break:break-all}
-.setup-step a{color:var(--primary);font-weight:600;font-size:.8rem}
-.config-box{background:#FAF6F0;border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-top:16px}
-.config-box h3{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.config-saved{font-size:.76rem;color:var(--green);font-weight:600;display:none;margin-top:8px}
-
-/* ─── MISC ─── */
-.spin{border:3px solid var(--border);border-top:3px solid var(--primary);border-radius:50%;width:24px;height:24px;animation:sp .8s linear infinite;margin:16px auto}
-@keyframes sp{to{transform:rotate(360deg)}}
-.hidden{display:none!important}
-.alert{padding:10px 14px;border-radius:9px;margin-bottom:12px;font-size:.84rem;font-weight:600}
-.ae{background:var(--red-bg);color:var(--red)}
-.ai{background:#e0f2fe;color:#0c4a6e}
-.separator{height:1px;background:var(--border);margin:16px 0}
-
-@media(max-width:500px){
-  .dur-grid{grid-template-columns:1fr}
-  .card{padding:16px 12px}
-  .tp-div{display:none}
-  .tp-block{min-width:155px}
-  .hero h1{font-size:1.45rem}
-}
-</style>
-</head>
-<body>
-
-<!-- ─── HERO ─── -->
-<div class="hero">
-  <div class="hero-badge">🛠️ &nbsp;Karigar – School of Applied Learning</div>
-  <h1>Book a <em>Skill Session</em></h1>
-  <p>A flagship initiative by Lend A Hand India · Pune, Maharashtra<br>Hands-on vocational education — the "Disney Land of Skills"</p>
-</div>
-
-<div class="wrap">
-
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('book',this)">📅 Book a Session</button>
-    <button class="tab-btn" onclick="switchTab('status',this)">🔍 My Booking</button>
-  </div>
-
-  <!-- ═══ BOOKING TAB ═══ -->
-  <div id="tab-book" class="card">
-    <!-- Step Indicator -->
-    <div class="steps">
-      <div class="step active" id="si-1"><div class="sc">1</div><span class="sl">Type</span></div>
-      <div class="step"        id="si-2"><div class="sc">2</div><span class="sl">Date</span></div>
-      <div class="step"        id="si-3"><div class="sc">3</div><span class="sl">Time</span></div>
-      <div class="step"        id="si-4"><div class="sc">4</div><span class="sl">Details</span></div>
-      <div class="step"        id="si-5"><div class="sc">5</div><span class="sl">Confirm</span></div>
-    </div>
-
-    <!-- STEP 1: Session type -->
-    <div id="step-1">
-      <div class="ttl">What type of session do you need?</div>
-      <div class="sub">Choose the best fit for your project or learning goal</div>
-      <div class="dur-grid">
-        <div class="dur-card" onclick="pickDur('full',this)">
-          <div class="di">📅</div><div class="dt">Full Day</div>
-          <div class="dd">Intensive work<br>Large projects</div>
-        </div>
-        <div class="dur-card" onclick="pickDur('half',this)">
-          <div class="di">🌗</div><div class="dt">Half Day</div>
-          <div class="dd">Mid-size work<br>Learning sessions</div>
-        </div>
-        <div class="dur-card" onclick="pickDur('hourly',this)">
-          <div class="di">⏰</div><div class="dt">Hourly</div>
-          <div class="dd">Quick fixes<br>Demos &amp; repairs</div>
-        </div>
-      </div>
-      <button class="btn btn-p" id="btn-n1" onclick="goStep(2)" disabled>Next: Pick a Date →</button>
-    </div>
-
-    <!-- STEP 2: Date -->
-    <div id="step-2" class="hidden">
-      <div class="ttl">Choose a Date</div>
-      <div class="sub" id="dur-remind"></div>
-
-      <!-- Live Calendar Embed -->
-      <div class="cal-wrap">
-        <div class="cal-head">
-          <span>📅 Karigar Bookings Calendar</span>
-          <small>Live public Google Calendar</small>
-        </div>
-        <iframe id="cal-iframe" class="cal-frame" src="" frameborder="0" scrolling="no"></iframe>
-      </div>
-
-      <!-- Date Picker -->
-      <div class="date-box">
-        <div class="date-label">📌 Select your booking date</div>
-        <input type="date" id="date-picker" class="date-input" onchange="onDatePick(this.value)"/>
-        <div class="date-note">⏳ Bookings must be made at least <strong>10 full days in advance</strong>. Sundays are open.</div>
-        <div id="date-err" class="msg msg-err hidden"></div>
-        <div id="date-ok"  class="msg msg-ok  hidden"></div>
-      </div>
-
-      <!-- Day bookings panel -->
-      <div id="day-panel" class="day-panel hidden"></div>
-      <div class="legend">
-        <div class="leg"><div class="leg-dot" style="background:#7DAB79"></div> Approved (on calendar)</div>
-        <div class="leg"><div class="leg-dot" style="background:#7BA7C2"></div> Pending (in system)</div>
-      </div>
-      <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px">Sundays are open &nbsp;·&nbsp; Approved sessions appear on the calendar above</p>
-
-      <div class="btn-row">
-        <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(1)">← Back</button>
-        <button class="btn btn-p" id="btn-n2" onclick="goStep(3)" disabled>Next: Set Time →</button>
-      </div>
-    </div>
-
-    <!-- STEP 3: Time -->
-    <div id="step-3" class="hidden">
-      <div class="ttl">Set Your Session Time</div>
-      <div class="sub" id="time-sub"></div>
-      <div class="tp-card">
-        <div class="tp-head">Drag spinners or use quick-pick presets below</div>
-        <div class="tp-body">
-          <div class="tp-row">
-            <div class="tp-block">
-              <div class="tp-lbl">🟢 Start Time</div>
-              <div class="spinners">
-                <div class="sg"><div class="sg-sub">Hr</div><button class="spb" onclick="adj('sh',1)">▲</button><div class="spv" id="s-h">09</div><button class="spb" onclick="adj('sh',-1)">▼</button></div>
-                <div class="sc2">:</div>
-                <div class="sg"><div class="sg-sub">Min</div><button class="spb" onclick="adj('sm',1)">▲</button><div class="spv" id="s-m">00</div><button class="spb" onclick="adj('sm',-1)">▼</button></div>
-              </div>
-              <div class="ap-row">
-                <button class="apb on" id="s-am" onclick="setAP('s','AM')">AM</button>
-                <button class="apb"    id="s-pm" onclick="setAP('s','PM')">PM</button>
-              </div>
-            </div>
-            <div class="tp-div"></div>
-            <div class="tp-block">
-              <div class="tp-lbl">🔴 End Time</div>
-              <div class="spinners">
-                <div class="sg"><div class="sg-sub">Hr</div><button class="spb" onclick="adj('eh',1)">▲</button><div class="spv" id="e-h">05</div><button class="spb" onclick="adj('eh',-1)">▼</button></div>
-                <div class="sc2">:</div>
-                <div class="sg"><div class="sg-sub">Min</div><button class="spb" onclick="adj('em',1)">▲</button><div class="spv" id="e-m">00</div><button class="spb" onclick="adj('em',-1)">▼</button></div>
-              </div>
-              <div class="ap-row">
-                <button class="apb"    id="e-am" onclick="setAP('e','AM')">AM</button>
-                <button class="apb on" id="e-pm" onclick="setAP('e','PM')">PM</button>
-              </div>
-            </div>
-          </div>
-          <div class="range-box">
-            <div class="rb"><div class="rb-l">Start</div><div class="rb-v" id="r-start">9:00 AM</div></div>
-            <div class="rb-arr">→</div>
-            <div class="rb"><div class="rb-l">End</div><div class="rb-v" id="r-end">5:00 PM</div></div>
-            <div class="rb-dur" id="r-dur">8h</div>
-          </div>
-          <div id="time-err" class="msg msg-err hidden" style="margin-top:10px">⚠️ End time must be after start time</div>
-          <div class="presets" id="presets"></div>
-          <div id="conflict" class="msg msg-warn hidden" style="margin-top:10px">
-            ⚠️ Your time overlaps with an approved booking. You can still submit — the team will review.
-          </div>
-        </div>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(2)">← Back</button>
-        <button class="btn btn-p" id="btn-n3" onclick="goStep(4)">Next: Your Details →</button>
-      </div>
-    </div>
-
-    <!-- STEP 4: Details -->
-    <div id="step-4" class="hidden">
-      <div class="ttl">Your Details</div>
-      <div class="sub">We'll contact you once your session is confirmed</div>
-      <div id="form-err" class="alert ae hidden"></div>
-      <div class="fg"><label>Full Name *</label><input id="f-name" type="text"/></div>
-      <div class="fg"><label>Phone Number *</label><input id="f-phone" type="tel"/></div>
-      <div class="fg"><label>Email Address *</label><input id="f-email" type="email"/></div>
-      <div class="fg">
-        <label>Type of Work *</label>
-        <select id="f-type" onchange="toggleOtherType(this.value)">
-          <option value="">— Select type of work —</option>
-          <option>Karigar Express</option>
-          <option>Exposure Visit</option>
-          <option>One Day Hands Visit</option>
-          <option>Long Term Course</option>
-          <option>Training of Teachers</option>
-          <option>Birthday Celebration</option>
-          <option>Other</option>
-        </select>
-        <div id="other-type-wrap" class="hidden" style="margin-top:10px">
-          <input id="f-type-other" type="text" placeholder="Please describe your session type…"/>
-        </div>
-      </div>
-      <div class="fg">
-        <label>Select Lab * (choose one or more)</label>
-        <div class="checkbox-grid" id="f-labs">
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Agriculture Lab"/>Agriculture Lab</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Electrical Lab"/>Electrical Lab</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Engineering Lab"/>Engineering Lab</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Food Processing Lab"/>Food Processing Lab</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Healthcare Lab"/>Healthcare Lab</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="Mechatronics Lab"/>Mechatronics Lab</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="1st Floor"/>1st Floor</label>
-          <label class="checkbox-pill"><input type="checkbox" name="f-lab" value="2nd Floor"/>2nd Floor</label>
-        </div>
-        <div class="field-help">You can select multiple labs / locations.</div>
-      </div>
-      <div class="fg">
-        <label>What is it about? *</label>
-        <textarea id="f-work-details"></textarea>
-      </div>
-
-      <!-- ── Additional Requirements section ── -->
-      <div class="fg">
-        <label>Additional Requirements <span style="font-weight:400;color:var(--muted)">(Optional)</span></label>
-        <div class="checkbox-grid">
-          <label class="checkbox-pill" onclick="toggleReq('food')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Food &amp; Refreshments" id="req-cb-food" style="pointer-events:none"/>🍽️ Food &amp; Refreshments</label>
-          <label class="checkbox-pill" onclick="toggleReq('stationery')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Stationery" id="req-cb-stationery" style="pointer-events:none"/>✏️ Stationery</label>
-          <label class="checkbox-pill" onclick="toggleReq('tv')" style="cursor:pointer"><input type="checkbox" name="f-req" value="TV / Projector" id="req-cb-tv" style="pointer-events:none"/>📺 TV / Projector</label>
-          <label class="checkbox-pill" onclick="toggleReq('wifi')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Wi-Fi" id="req-cb-wifi" style="pointer-events:none"/>📶 Wi-Fi</label>
-          <label class="checkbox-pill" onclick="toggleReq('chairs')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Extra Chairs / Tables" id="req-cb-chairs" style="pointer-events:none"/>🪑 Extra Chairs / Tables</label>
-          <label class="checkbox-pill" onclick="toggleReq('vc')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Video Conferencing" id="req-cb-vc" style="pointer-events:none"/>💻 Video Conferencing</label>
-          <label class="checkbox-pill" onclick="toggleReq('other')" style="cursor:pointer"><input type="checkbox" name="f-req" value="Other" id="req-cb-other" style="pointer-events:none"/>➕ Other</label>
-        </div>
-        <!-- per-item detail textareas -->
-        <div id="req-wrap-food"       class="hidden" style="margin-top:8px"><textarea id="req-note-food"       rows="2" placeholder="Details for Food &amp; Refreshments…"  style="resize:vertical;min-height:64px"></textarea></div>
-        <div id="req-wrap-stationery" class="hidden" style="margin-top:8px"><textarea id="req-note-stationery" rows="2" placeholder="Details for Stationery…"                style="resize:vertical;min-height:64px"></textarea></div>
-        <div id="req-wrap-tv"         class="hidden" style="margin-top:8px"><textarea id="req-note-tv"         rows="2" placeholder="Details for TV / Projector…"            style="resize:vertical;min-height:64px"></textarea></div>
-        <div id="req-wrap-wifi"       class="hidden" style="margin-top:8px"><textarea id="req-note-wifi"       rows="2" placeholder="Details for Wi-Fi…"                     style="resize:vertical;min-height:64px"></textarea></div>
-        <div id="req-wrap-chairs"     class="hidden" style="margin-top:8px"><textarea id="req-note-chairs"     rows="2" placeholder="Details for Extra Chairs / Tables…"     style="resize:vertical;min-height:64px"></textarea></div>
-        <div id="req-wrap-vc"         class="hidden" style="margin-top:8px"><textarea id="req-note-vc"         rows="2" placeholder="Details for Video Conferencing…"        style="resize:vertical;min-height:64px"></textarea></div>
-        <div id="req-wrap-other"      class="hidden" style="margin-top:8px"><textarea id="req-note-other"      rows="2" placeholder="Describe your additional requirement…"  style="resize:vertical;min-height:64px"></textarea></div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(3)">← Back</button>
-        <button class="btn btn-p" onclick="goStep(5)">Review Booking →</button>
-      </div>
-    </div>
-
-    <!-- STEP 5: Confirm -->
-    <div id="step-5" class="hidden">
-      <div class="ttl">Review &amp; Confirm</div>
-      <div class="summ" id="summ"></div>
-      <div id="sub-err" class="alert ae hidden"></div>
-      <div class="btn-row">
-        <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(4)">← Edit</button>
-        <button class="btn btn-p" id="btn-sub" onclick="submitBooking()">✅ Confirm Session</button>
-      </div>
-    </div>
-
-    <!-- STEP 6: Success -->
-    <div id="step-6" class="hidden">
-      <div class="sbox">
-        <div style="font-size:3.5rem">🎉</div>
-        <h2>Request Submitted!</h2>
-        <p>Your session request is pending approval from the Karigar team.</p>
-        <p>You'll receive an email once your booking is confirmed.</p>
-        <div class="bid" id="bid"></div>
-        <p style="font-size:.73rem;color:var(--muted)">Save this ID to track or reschedule your booking</p>
-        <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-p" style="max-width:200px" onclick="resetForm()">📅 Book Another</button>
-          <button class="btn btn-s" onclick="switchTab('status',document.querySelectorAll('.tab-btn')[1])">🔍 Check Status</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ STATUS TAB ═══ -->
-  <div id="tab-status" class="card hidden">
-    <div class="ttl">Check Booking Status</div>
-    <p style="color:var(--muted);font-size:.84rem;margin-bottom:16px">Enter your email or Booking ID to see your bookings. If the backend URL is still blank in the code, status lookup will stay inactive.</p>
-    <div class="fg">
-      <label>Email or Booking ID</label>
-      <input id="sq" type="text" placeholder="you@email.com or KARIGAR12345678" onkeyup="if(event.key==='Enter')checkStatus()"/>
-    </div>
-    <button class="btn btn-p" onclick="checkStatus()">🔍 Check Status</button>
-    <div id="st-out"></div>
-  </div>
-</div>
-
-<div style="text-align:center;margin-top:28px;font-size:.7rem;color:var(--muted);padding:0 16px">
-  Public calendar connected · iCal feed available in code as <code>PUBLIC_ICAL_URL</code><br>
-  Karigar – School of Applied Learning &nbsp;·&nbsp; <strong>Lend A Hand India</strong> &nbsp;·&nbsp; Pune, Maharashtra
-</div>
-
-<script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const PUBLIC_CALENDAR_EMBED_URL = 'https://calendar.google.com/calendar/embed?src=c_f52c1786104054526a8c486e0767da89d6f225bad1974494ab17b5a99a487abe%40group.calendar.google.com&ctz=Asia%2FKolkata&mode=MONTH&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=0&bgcolor=%23ffffff';
-const PUBLIC_ICAL_URL = 'https://calendar.google.com/calendar/ical/c_f52c1786104054526a8c486e0767da89d6f225bad1974494ab17b5a99a487abe%40group.calendar.google.com/public/basic.ics';
-const BACKEND_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2bL5FBh3TJSwCqLkUQ1bItOrlU-5Y_tgxS0xK5LY5MyroRqEhZItPQAa3d1AuinuUiA/exec';
-const CALENDAR_AUTO_REFRESH_MS = 60000;
-
-function SCRIPT_URL(){return BACKEND_SCRIPT_URL;}
-function minLeadDate(){var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+10); return d;}
-function isDateBookable(d){var min=minLeadDate(); return d>=min;}
-function getSelectedLabs(){return Array.from(document.querySelectorAll('input[name="f-lab"]:checked')).map(function(el){return el.value;});}
-function clearSelectedLabs(){document.querySelectorAll('input[name="f-lab"]').forEach(function(el){el.checked=false;});}
-
-function buildCalEmbedUrl(){
-  return PUBLIC_CALENDAR_EMBED_URL + '&_ts=' + Date.now();
+function toDateObj(val) {
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (val === '' || val === null || val === undefined) return null;
+  var d = new Date(String(val));
+  return isNaN(d.getTime()) ? null : d;
 }
 
-function updateCalEmbed(){
-  var el=document.getElementById('cal-iframe');
-  if(!el)return;
-  el.src=buildCalEmbedUrl();
+function fmtDate(val) {
+  var d = toDateObj(val);
+  if (d) return Utilities.formatDate(d, TZ, 'd MMMM yyyy');
+  return String(val || '').trim();
 }
 
-async function refreshCalendarData(){
-  updateCalEmbed();
-  if(SCRIPT_URL()) await loadCalBk();
-  renderDateTiles();
+function fmtTime(val) {
+  var d = toDateObj(val);
+  if (d) return Utilities.formatDate(d, TZ, 'h:mm a');
+  return String(val || '').trim();
 }
 
-function startAutoRefresh(){
-  setInterval(function(){
-    if(document.visibilityState==='visible') refreshCalendarData();
-  }, CALENDAR_AUTO_REFRESH_MS);
-  document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState==='visible') refreshCalendarData();
-  });
-  window.addEventListener('focus', function(){ refreshCalendarData(); });
+function fmtDateKey(val) {
+  var d = toDateObj(val);
+  if (d) return Utilities.formatDate(d, TZ, 'yyyy-MM-dd');
+  var s = String(val || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return dateToKey(s);
 }
 
-// ─── STATE ────────────────────────────────────────────────────────────────────
-var curStep=1, selDur=null, selDate=null, calBk={};
-var sH=9,sM=0,sAP='AM',eH=5,eM=0,eAP='PM';
-var today=new Date(); today.setHours(0,0,0,0);
-var DUR_LBL={full:'Full Day',half:'Half Day',hourly:'Hourly'};
-var DUR_DEF={
-  full:{sH:9,sM:0,sAP:'AM',eH:5,eM:0,eAP:'PM'},
-  half:{sH:9,sM:0,sAP:'AM',eH:1,eM:0,eAP:'PM'},
-  hourly:{sH:9,sM:0,sAP:'AM',eH:10,eM:0,eAP:'AM'}
-};
-var PRESETS={
-  full:[{l:'9AM–5PM',sH:9,sM:0,sAP:'AM',eH:5,eM:0,eAP:'PM'},{l:'8AM–4PM',sH:8,sM:0,sAP:'AM',eH:4,eM:0,eAP:'PM'},{l:'10AM–6PM',sH:10,sM:0,sAP:'AM',eH:6,eM:0,eAP:'PM'}],
-  half:[{l:'9AM–1PM',sH:9,sM:0,sAP:'AM',eH:1,eM:0,eAP:'PM'},{l:'2PM–6PM',sH:2,sM:0,sAP:'PM',eH:6,eM:0,eAP:'PM'},{l:'8AM–12PM',sH:8,sM:0,sAP:'AM',eH:12,eM:0,eAP:'PM'}],
-  hourly:[{l:'9–10AM',sH:9,sM:0,sAP:'AM',eH:10,eM:0,eAP:'AM'},{l:'10–11AM',sH:10,sM:0,sAP:'AM',eH:11,eM:0,eAP:'AM'},{l:'11AM–12',sH:11,sM:0,sAP:'AM',eH:12,eM:0,eAP:'PM'},{l:'2–3PM',sH:2,sM:0,sAP:'PM',eH:3,eM:0,eAP:'PM'},{l:'3–4PM',sH:3,sM:0,sAP:'PM',eH:4,eM:0,eAP:'PM'},{l:'4–5PM',sH:4,sM:0,sAP:'PM',eH:5,eM:0,eAP:'PM'}]
-};
+// ── POST handler ───────────────────────────────────────────────────────────────
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
 
-var RESCHEDULE_SLOTS={
-  'Full Day':[
-    {label:'8:00 AM – 4:00 PM',start:'8:00 AM',end:'4:00 PM'},
-    {label:'9:00 AM – 5:00 PM',start:'9:00 AM',end:'5:00 PM'},
-    {label:'10:00 AM – 6:00 PM',start:'10:00 AM',end:'6:00 PM'}
-  ],
-  'Half Day':[
-    {label:'8:00 AM – 12:00 PM',start:'8:00 AM',end:'12:00 PM'},
-    {label:'9:00 AM – 1:00 PM',start:'9:00 AM',end:'1:00 PM'},
-    {label:'2:00 PM – 6:00 PM',start:'2:00 PM',end:'6:00 PM'}
-  ],
-  'Hourly':[
-    {label:'9:00 AM – 10:00 AM',start:'9:00 AM',end:'10:00 AM'},
-    {label:'10:00 AM – 11:00 AM',start:'10:00 AM',end:'11:00 AM'},
-    {label:'11:00 AM – 12:00 PM',start:'11:00 AM',end:'12:00 PM'},
-    {label:'12:00 PM – 1:00 PM',start:'12:00 PM',end:'1:00 PM'},
-    {label:'1:00 PM – 2:00 PM',start:'1:00 PM',end:'2:00 PM'},
-    {label:'2:00 PM – 3:00 PM',start:'2:00 PM',end:'3:00 PM'},
-    {label:'3:00 PM – 4:00 PM',start:'3:00 PM',end:'4:00 PM'},
-    {label:'4:00 PM – 5:00 PM',start:'4:00 PM',end:'5:00 PM'},
-    {label:'5:00 PM – 6:00 PM',start:'5:00 PM',end:'6:00 PM'}
-  ]
-};
+    if (data.action === 'book')        return handleBook(data);
+    if (data.action === 'reschedule')  return handleReschedule(data);
 
-// ─── TABS ─────────────────────────────────────────────────────────────────────
-function switchTab(tab,btn){
-  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  document.getElementById('tab-book').classList.toggle('hidden',tab!=='book');
-  document.getElementById('tab-status').classList.toggle('hidden',tab!=='status');
-  if(tab==='book') refreshCalendarData();
-}
-
-// ─── STEP 1 ───────────────────────────────────────────────────────────────────
-function pickDur(type,el){
-  selDur=type;
-  document.querySelectorAll('.dur-card').forEach(function(c){c.classList.remove('selected');});
-  el.classList.add('selected');
-  document.getElementById('btn-n1').disabled=false;
-}
-
-// ─── STEP NAVIGATION ──────────────────────────────────────────────────────────
-function goStep(n){
-  if(n===5){
-    var err=document.getElementById('form-err');
-    // ── CHANGE 5: updated validation ──
-    var nm=v('f-name'),ph=v('f-phone'),em=v('f-email'),type=v('f-type'),details=v('f-work-details'),labs=getSelectedLabs();
-    if(!nm||!ph||!em||!type||!details||!labs.length){showEl(err,'Please fill in all required fields, including at least one lab.');return;}
-    if(type==='Other' && !document.getElementById('f-type-other').value.trim()){showEl(err,'Please specify your "Other" session type.');return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){showEl(err,'Enter a valid email address.');return;}
-    if(!/^\d{10}$/.test(ph)){showEl(err,'Phone must be exactly 10 digits.');return;}
-    err.classList.add('hidden');
-    buildSummary();
+    return jsonOut({ success: false, error: 'Unknown action: ' + data.action });
+  } catch (err) {
+    return jsonOut({ success: false, error: err.message });
   }
-  if(n===4){
-    if(toMins(sH,sM,sAP)>=toMins(eH,eM,eAP)){
-      document.getElementById('time-err').classList.remove('hidden'); return;
+}
+
+// ── GET handler ────────────────────────────────────────────────────────────────
+function doGet(e) {
+  try {
+    var params = (e && e.parameter) ? e.parameter : {};
+    // Fallback: parse queryString manually (handles Google redirect edge case)
+    if (!params.action && e && e.queryString) {
+      e.queryString.split('&').forEach(function(pair) {
+        var kv = pair.split('=');
+        if (kv.length >= 2)
+          params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1].replace(/\+/g,' '));
+      });
     }
-    document.getElementById('time-err').classList.add('hidden');
+
+    var action = params.action || '';
+    if (action === 'calBookings') return calBookings(params);
+    if (action === 'check')       return checkStatus(params.query || '');
+    if (action === 'approve')     return processDecision(params.id, 'approve', params.token);
+    if (action === 'decline')     return processDecision(params.id, 'decline', params.token);
+    if (action === 'cancel')      return processDecision(params.id, 'cancel',  params.token);
+
+    return HtmlService.createHtmlOutput(
+      '<h3 style="font-family:sans-serif;text-align:center;margin-top:40px;color:#4f46e5">Karigar Booking System ✅</h3>'
+    );
+  } catch (err) {
+    return jsonOut({ success: false, error: err.message });
   }
-  document.getElementById('step-'+curStep).classList.add('hidden');
-  document.getElementById('step-'+n).classList.remove('hidden');
-  [1,2,3,4,5].forEach(function(i){
-    var s=document.getElementById('si-'+i); if(!s)return;
-    s.classList.remove('active','done');
-    if(i<n) s.classList.add('done');
-    if(i===n) s.classList.add('active');
-  });
-  curStep=n;
-  if(n===2) initStep2();
-  if(n===3) setupTime();
 }
 
-function initStep2(){
-  document.getElementById('dur-remind').textContent='Selected: '+DUR_LBL[selDur]+' · View the calendar above, then pick your date below';
-  updateCalEmbed();
-  var dp=document.getElementById('date-picker');
-  var minDate=minLeadDate();
-  dp.min=toKey(minDate);
-  dp.removeAttribute('max');
-  dp.value='';
-  hide('date-ok'); hide('date-err');
-  document.getElementById('btn-n2').disabled=true;
-  document.getElementById('day-panel').classList.add('hidden');
-  selDate=null;
-  renderDateTiles();
-  loadCalBk();
-}
+// ── New Booking ────────────────────────────────────────────────────────────────
+function handleBook(data) {
+  var sheet = getOrCreateSheet();
+  ensureNewColumns(sheet);
 
-// ─── DATE SELECTION ───────────────────────────────────────────────────────────
-function onDatePick(val){
-  var errEl=document.getElementById('date-err');
-  var okEl=document.getElementById('date-ok');
-  var btn=document.getElementById('btn-n2');
-  hide('date-err'); hide('date-ok'); btn.disabled=true;
-  if(!val){selDate=null; renderDateTiles(); return;}
-  var parts=val.split('-');
-  var picked=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
-  picked.setHours(0,0,0,0);
-  if(!isDateBookable(picked)){
-    showEl(errEl,'⚠️ Bookings must be made at least 10 full days in advance.');
-    selDate=null; renderDateTiles(); return;
+  var dateKey = data.dateKey || dateToKey(data.date);
+  if (!isBookableDateKey(dateKey)) {
+    return jsonOut({ success: false, error: 'Bookings must be made at least 10 full days in advance.' });
   }
-  selDate=picked;
-  var ds=picked.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  showEl(okEl,'✅ '+ds+' selected');
-  btn.disabled=false;
-  showDayPanel(toKey(picked),picked);
-  renderDateTiles();
-}
 
-async function loadCalBk(){
-  if(!SCRIPT_URL()){ renderDateTiles(); return; }
-  var data=await apiGet('calBookings');
-  if(data&&data.success){
-    calBk=data.bookings||{};
-    if(selDate) showDayPanel(toKey(selDate),selDate);
-  }
-  renderDateTiles();
-}
+  var id           = Utilities.getUuid();
+  var labsText     = normalizeLabs(data.labs || data.lab || '');
+  var typeOfWork   = String(data.typeOfWork || data.service || '').trim();
+  var workDetails  = String(data.workDetails || '').trim();
+  var serviceSummary = typeOfWork || String(data.service || '').trim();
 
-function renderDateTiles(){
-  var wrap=document.getElementById('date-tiles');
-  if(!wrap) return;
-  var start=minLeadDate();
-  var html='';
-  for(var i=0;i<21;i++){
-    var d=new Date(start); d.setDate(start.getDate()+i);
-    var key=toKey(d);
-    var entries=calBk[key]||[];
-    var hasApproved=entries.some(function(b){return b.status==='Approved';});
-    var hasPending=entries.some(function(b){return b.status==='Pending';});
-    var cls=hasApproved?'booked':(hasPending?'pending':'available');
-    var selected=selDate&&toKey(selDate)===key?' selected':'';
-    html+='<button type="button" class="date-tile '+cls+selected+'" onclick="pickTileDate(\''+key+'\')">'
-      +'<small>'+d.toLocaleDateString('en-IN',{weekday:'short'})+'</small>'
-      +'<strong>'+d.getDate()+'</strong>'
-      +'<span>'+(hasApproved?'Approved booked':(hasPending?'Pending request':'Available'))+'</span>'
-      +'</button>';
-  }
-  wrap.innerHTML=html;
-}
-function pickTileDate(key){
-  var dp=document.getElementById('date-picker');
-  if(dp) dp.value=key;
-  onDatePick(key);
-}
-function showDayPanel(key,date){
-  var p=document.getElementById('day-panel');
-  var bks=calBk[key]||[];
-  var ds=date.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  var h='<div class="dp-head"><span>📅 '+ds+'</span><small>'+(bks.length>0?bks.length+' booking(s)':'No pending bookings')+'</small></div><div class="dp-body">';
-  if(bks.length===0){
-    h+='<div class="dp-empty">No bookings in our system for this date yet.</div>';
+  // FIX (Bug 4): normalise additionalRequirements — frontend sends an array, sheet stores a string
+  var additionalReqs = '';
+  if (Array.isArray(data.additionalRequirements)) {
+    additionalReqs = data.additionalRequirements
+      .map(function(x){ return String(x || '').trim(); })
+      .filter(Boolean)
+      .join(', ');
   } else {
-    bks.forEach(function(b){
-      var app=b.status==='Approved';
-      h+='<div class="dp-event"><div class="dp-bar '+(app?'bar-a':'bar-p')+'"></div>'
-        +'<div><div class="dp-name">👤 '+(b.name||'—')+'</div>'
-        +'<div class="dp-meta">🕐 '+(b.time||'')+'→'+(b.endTime||'?')+' &nbsp;·&nbsp; '+(b.duration||'')+'</div></div>'
-        +'<span class="dp-badge '+(app?'db-a':'db-p')+'">'+b.status+'</span></div>';
+    additionalReqs = String(data.additionalRequirements || '').trim();
+  }
+
+  sheet.appendRow([
+    id,
+    data.name     || '',
+    data.phone    || '',
+    data.email    || '',
+    serviceSummary,
+    data.date     || '',
+    data.time     || '',
+    'Pending',
+    new Date().toLocaleString('en-IN'),
+    data.duration || '',
+    data.endTime  || '',
+    dateKey,
+    '',   // CalEventId
+    '',   // OriginalDate
+    '',   // OriginalTime
+    '',   // OriginalEndTime
+    '',   // OriginalDateKey
+    typeOfWork,
+    labsText,
+    workDetails,
+    additionalReqs            // FIX (Bug 4): col 21 – Additional Requirements
+  ]);
+
+  data.typeOfWork            = typeOfWork;
+  data.labs                  = labsText;
+  data.workDetails           = workDetails;
+  data.service               = serviceSummary;
+  data.additionalRequirements = additionalReqs;  // FIX (Bug 6): make available to email
+
+  sendOwnerEmail(id, data);
+  return jsonOut({ success: true, id: id });
+}
+
+// ── Reschedule ─────────────────────────────────────────────────────────────────
+function handleReschedule(data) {
+  var sheet = getOrCreateSheet();
+  ensureNewColumns(sheet);
+
+  var rows  = sheet.getDataRange().getValues();
+  var hdr   = rows[0].map(function(x){ return String(x).toLowerCase().replace(/\s+/g,''); });
+  var C = colMap(hdr);
+
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][C.id]) !== data.bookingId) continue;
+
+    var cur = String(rows[i][C.status] || '');
+    if (cur === 'Declined') return jsonOut({ success: false, error: 'Booking is already declined.' });
+    if (!isBookableDateKey(data.newDateKey || '')) {
+      return jsonOut({ success: false, error: 'Reschedules must be made at least 10 full days in advance.' });
+    }
+
+    // If an already-approved booking is being rescheduled, snapshot the old slot
+    // so we can either restore it (if declined) or delete/replace it (if approved).
+    if (cur === 'Approved') {
+      if (C.origDate    >= 0) sheet.getRange(i + 1, C.origDate    + 1).setValue(rows[i][C.date]    || '');
+      if (C.origTime    >= 0) sheet.getRange(i + 1, C.origTime    + 1).setValue(rows[i][C.time]    || '');
+      if (C.origEndTime >= 0) sheet.getRange(i + 1, C.origEndTime + 1).setValue(rows[i][C.endTime] || '');
+      if (C.origDateKey >= 0) sheet.getRange(i + 1, C.origDateKey + 1).setValue(rows[i][C.dateKey] || '');
+    }
+
+    sheet.getRange(i + 1, C.date    + 1).setValue(data.newDate    || '');
+    sheet.getRange(i + 1, C.time    + 1).setValue(data.newTime    || '');
+    sheet.getRange(i + 1, C.endTime + 1).setValue(data.newEndTime || '');
+    sheet.getRange(i + 1, C.dateKey + 1).setValue(data.newDateKey || '');
+    sheet.getRange(i + 1, C.status  + 1).setValue('Pending');
+
+    // Notify owner
+    var booking = rowToObj(rows[i], C);
+    booking.date    = data.newDate    || '';
+    booking.time    = data.newTime    || '';
+    booking.endTime = data.newEndTime || '';
+    booking.dateKey = data.newDateKey || '';
+    sendOwnerEmail(data.bookingId, booking, /* isReschedule */ true);
+
+    return jsonOut({ success: true });
+  }
+
+  return jsonOut({ success: false, error: 'Booking not found.' });
+}
+
+// ── Calendar bookings ──────────────────────────────────────────────────────────
+function calBookings(params) {
+  try {
+    var month = params.month ? parseInt(params.month, 10) : null;
+    var year  = params.year  ? parseInt(params.year,  10) : null;
+
+    var sheet  = getOrCreateSheet();
+    var rows   = sheet.getDataRange().getValues();
+    var hdr    = rows[0].map(function(x){ return String(x).toLowerCase().replace(/\s+/g,''); });
+    var C      = colMap(hdr);
+    var result = {};
+
+    for (var i = 1; i < rows.length; i++) {
+      var row    = rows[i];
+      var status = String(row[C.status] || '').trim();
+      if (status === 'Declined' || status === 'Cancelled' || status === '') continue;
+
+      var dk = C.dateKey >= 0 ? fmtDateKey(row[C.dateKey]) : '';
+      if (!dk || dk.length < 8) dk = C.date >= 0 ? fmtDateKey(row[C.date]) : '';
+      if (!dk || dk.length < 8) continue;
+
+      // Filter by month/year if provided
+      if (month !== null && year !== null) {
+        var parts = dk.split('-');
+        if (parts.length !== 3) continue;
+        if (parseInt(parts[0],10) !== year || parseInt(parts[1],10) !== month) continue;
+      }
+
+      if (!result[dk]) result[dk] = [];
+      result[dk].push({
+        name:       C.name      >= 0 ? String(row[C.name] || '') : '',
+        time:       C.time      >= 0 ? fmtTime(row[C.time])      : '',
+        endTime:    C.endTime   >= 0 ? fmtTime(row[C.endTime])   : '',
+        duration:   C.dur       >= 0 ? String(row[C.dur] || '')  : '',
+        status:     status,
+        typeOfWork: C.typeOfWork >= 0 ? String(row[C.typeOfWork] || '') : '',
+        labs:       C.labs      >= 0 ? String(row[C.labs] || '') : ''
+      });
+    }
+
+    return jsonOut({ success: true, bookings: result });
+  } catch (err) {
+    return jsonOut({ success: false, error: err.message });
+  }
+}
+
+// ── Status check ───────────────────────────────────────────────────────────────
+function checkStatus(query) {
+  try {
+    var q     = query.toLowerCase().trim();
+    var sheet = getOrCreateSheet();
+    var rows  = sheet.getDataRange().getValues();
+    var hdr   = rows[0].map(function(x){ return String(x).toLowerCase().replace(/\s+/g,''); });
+    var C     = colMap(hdr);
+
+    var bookings = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row     = rows[i];
+      var email   = String(row[C.email] || '').toLowerCase().trim();
+      var idFull  = String(row[C.id]    || '');
+      var idShort = idFull.substring(0, 8).toUpperCase();
+
+      if (email === q || idShort === q.toUpperCase() || ('karigar-'+idShort) === q.toUpperCase()) {
+        bookings.push({
+          id:                    idFull,
+          name:                  String(row[C.name]   || ''),
+          service:               C.service      >= 0 ? String(row[C.service]      || '') : '',
+          typeOfWork:            C.typeOfWork   >= 0 ? String(row[C.typeOfWork]   || '') : '',
+          labs:                  C.labs         >= 0 ? String(row[C.labs]         || '') : '',
+          workDetails:           C.workDetails  >= 0 ? String(row[C.workDetails]  || '') : '',
+          additionalRequirements:C.additionalReqs >= 0 ? String(row[C.additionalReqs] || '') : '',  // FIX (Bug 6)
+          duration:              C.dur          >= 0 ? String(row[C.dur]          || '') : '',
+          date:                  C.date         >= 0 ? fmtDate(row[C.date])              : '',
+          time:                  C.time         >= 0 ? fmtTime(row[C.time])              : '',
+          endTime:               C.endTime      >= 0 ? fmtTime(row[C.endTime])           : '',
+          status:                C.status       >= 0 ? String(row[C.status]       || '') : ''
+        });
+      }
+    }
+
+    return jsonOut({ success: true, bookings: bookings });
+  } catch (err) {
+    return jsonOut({ success: false, error: err.message });
+  }
+}
+
+// ── Approve / Decline / Cancel ────────────────────────────────────────────────
+function processDecision(id, action, token) {
+  try {
+    if (token !== SECRET_TOKEN) return htmlPage(errorHtml('Invalid or expired link.'));
+
+    var sheet = getOrCreateSheet();
+    ensureNewColumns(sheet);
+
+    var rows  = sheet.getDataRange().getValues();
+    var hdr   = rows[0].map(function(x){ return String(x).toLowerCase().replace(/\s+/g,''); });
+    var C     = colMap(hdr);
+
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][C.id]) !== id) continue;
+
+      var cur                = String(rows[i][C.status] || '');
+      var booking            = rowToObj(rows[i], C);
+      var isReschedule       = hasPendingReschedule(rows[i], C);
+      var existingCalEventId = C.calEventId >= 0 ? String(rows[i][C.calEventId] || '').trim() : '';
+      var base               = ScriptApp.getService().getUrl();
+      var cancelL            = base + '?action=cancel&id=' + id + '&token=' + SECRET_TOKEN;
+
+      // ── CANCEL (works on Approved bookings only) ──────────────────────────
+      if (action === 'cancel') {
+        if (cur !== 'Approved') {
+          return htmlPage(infoHtml('Cannot Cancel',
+            'Only <strong>Approved</strong> bookings can be cancelled this way. '
+            + 'Current status: <strong>' + (cur || 'Unknown') + '</strong>.'));
+        }
+        // Try to remove the calendar event; silently continues if it was already
+        // deleted manually from Google Calendar (the common trigger for this flow).
+        if (existingCalEventId) {
+          deleteCalendarEvent(existingCalEventId);
+          if (C.calEventId >= 0) sheet.getRange(i + 1, C.calEventId + 1).setValue('');
+        }
+        sheet.getRange(i + 1, C.status + 1).setValue('Cancelled');
+        sendCancellationEmail(booking);
+        sendRequirementCancellationEmails(booking); // notify food/stationery/etc to stand down
+
+        return htmlPage(successHtml(
+          '🚫 Booking Cancelled',
+          'You cancelled <strong>' + booking.name + '</strong>\'s session for <strong>'
+          + (booking.typeOfWork || booking.service) + '</strong> on <strong>' + booking.date
+          + '</strong>.<br><br>'
+          + '📅 The Google Calendar event has been removed (if it still existed).<br><br>'
+          + 'The customer has been notified.'
+        ));
+      }
+
+      // ── APPROVE / DECLINE (Pending bookings only) ─────────────────────────
+      if (cur !== 'Pending') {
+        return htmlPage(infoHtml('Already Processed',
+          'This booking was already <strong>' + cur.toLowerCase() + '</strong>. No change made.'));
+      }
+
+      if (action === 'approve') {
+        // If this is a reschedule for an already-approved booking, remove the old
+        // calendar event first, then create the new one.
+        if (isReschedule && existingCalEventId) deleteCalendarEvent(existingCalEventId);
+
+        var newCalEventId = createCalendarEvent(booking);
+        sheet.getRange(i + 1, C.status + 1).setValue('Approved');
+        if (C.calEventId >= 0) sheet.getRange(i + 1, C.calEventId + 1).setValue(newCalEventId || '');
+        clearRescheduleSnapshot(sheet, i + 1, C);
+
+        sendCustomerEmail(booking, 'Approved');
+        sendRequirementEmails(booking);
+        sendOwnerApprovalEmail(id, booking);  // persistent cancel link in admin's inbox
+
+        var calMsg = newCalEventId
+          ? (isReschedule
+              ? '📅 <strong>Old Google Calendar event removed and new event created.</strong><br><br>'
+              : '📅 <strong>Google Calendar event created!</strong><br><br>')
+          : '⚠️ Calendar event could not be created — check CALENDAR_ID in Code.gs.<br><br>';
+
+        var title = isReschedule ? '✅ Reschedule Approved!' : '✅ Session Approved!';
+        var msg   = isReschedule
+          ? 'You approved the reschedule for <strong>' + booking.name + '</strong>\'s <strong>'
+            + (booking.typeOfWork || booking.service) + '</strong> session to <strong>' + booking.date
+            + '</strong> from <strong>' + booking.time + '</strong> to <strong>'
+            + (booking.endTime||'?') + '</strong>.<br><br>' + calMsg + 'The customer has been notified.'
+          : 'You approved <strong>' + booking.name + '</strong>\'s session for <strong>'
+            + (booking.typeOfWork || booking.service) + '</strong> on <strong>' + booking.date
+            + '</strong> from <strong>' + booking.time + '</strong> to <strong>'
+            + (booking.endTime||'?') + '</strong>.<br><br>' + calMsg + 'The customer has been notified.';
+
+        // Confirmation page includes a Cancel link in case admin changes their mind
+        // or later removes the calendar event manually.
+        var cancelNote = '<p style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;'
+          + 'font-size:.78rem;color:#718096">Changed your mind? '
+          + '<a href="' + cancelL + '" style="color:#ef4444;font-weight:700">Cancel this booking</a>'
+          + ' — this will remove the calendar event and notify the customer.</p>';
+
+        return htmlPage(successHtmlWithNote(title, msg, cancelNote));
+      }
+
+      // ── Decline flow ──────────────────────────────────────────────────────
+      if (isReschedule) {
+        // Restore the previously approved slot and keep its existing calendar event.
+        restoreOriginalBooking(sheet, i + 1, rows[i], C);
+        var restored = bookingFromOriginalSnapshot(rows[i], C);
+        clearRescheduleSnapshot(sheet, i + 1, C);
+
+        sendRescheduleDeclinedEmail(restored);
+
+        return htmlPage(infoHtml(
+          'Reschedule Declined',
+          'The reschedule request for <strong>' + restored.name + '</strong> was declined.<br><br>'
+          + 'The original approved booking on <strong>' + restored.date + '</strong> from <strong>'
+          + restored.time + '</strong> to <strong>' + (restored.endTime || '?') + '</strong> has been kept.'
+        ));
+      }
+
+      // Normal decline for a first-time pending booking
+      sheet.getRange(i + 1, C.status + 1).setValue('Declined');
+      if (existingCalEventId) {
+        deleteCalendarEvent(existingCalEventId);
+        if (C.calEventId >= 0) sheet.getRange(i + 1, C.calEventId + 1).setValue('');
+      }
+      sendCustomerEmail(booking, 'Declined');
+
+      return htmlPage(successHtml(
+        '❌ Session Declined',
+        'You declined <strong>' + booking.name + '</strong>\'s session for <strong>'
+        + (booking.typeOfWork || booking.service) + '</strong>.<br><br>The customer has been notified.'
+      ));
+    }
+
+    return htmlPage(errorHtml('Booking ID not found.'));
+  } catch (err) {
+    return htmlPage(errorHtml('Error: ' + err.message));
+  }
+}
+
+// ── Calendar helpers ───────────────────────────────────────────────────────────
+function createCalendarEvent(booking) {
+  try {
+    var cal = CalendarApp.getCalendarById(CALENDAR_ID);
+    if (!cal) { Logger.log('Calendar not found: ' + CALENDAR_ID); return ''; }
+
+    var startDT = parseDateTime(booking.dateKey, booking.time);
+    var endDT   = parseDateTime(booking.dateKey, booking.endTime);
+    if (!startDT || !endDT) { Logger.log('Cannot parse datetime'); return ''; }
+
+    var bookingLabel = booking.typeOfWork || booking.service;
+    var title = '🔧 ' + booking.name + ' — ' + bookingLabel;
+    var desc  = [
+      'Type of Work: '  + (booking.typeOfWork || booking.service || '—'),
+      'Labs: '          + (booking.labs || '—'),
+      'Details: '       + (booking.workDetails || '—'),
+      'Requirements: '  + (booking.additionalRequirements || '—'),
+      'Duration Type: ' + (booking.duration || '—'),
+      'Phone: '         + booking.phone,
+      'Email: '         + booking.email,
+      '',
+      'Karigar – School of Applied Learning',
+      'Lend A Hand India · Pune, Maharashtra'
+    ].join('\n');
+
+    var event = cal.createEvent(title, startDT, endDT, {
+      description: desc,
+      location:    'Karigar – School of Applied Learning, Pune, Maharashtra',
+      guests:      booking.email,
+      sendInvites: true
     });
-  }
-  h+='</div>';
-  p.innerHTML=h; p.classList.remove('hidden');
-}
 
-// ─── STEP 3: TIME ─────────────────────────────────────────────────────────────
-function setupTime(){
-  var df=DUR_DEF[selDur];
-  sH=df.sH;sM=df.sM;sAP=df.sAP;eH=df.eH;eM=df.eM;eAP=df.eAP;
-  syncAP(); updateTime(); buildPresets(); checkConflict();
-  document.getElementById('time-sub').textContent=DUR_LBL[selDur]+' · '+selDate.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long'});
-  document.getElementById('btn-n3').disabled=false;
-}
-function adj(p,d){
-  if(p==='sh') sH=((sH-1+d+12)%12)+1;
-  else if(p==='sm') sM=(sM+d*15+60)%60;
-  else if(p==='eh') eH=((eH-1+d+12)%12)+1;
-  else if(p==='em') eM=(eM+d*15+60)%60;
-  document.querySelectorAll('.pr-btn').forEach(function(b){b.classList.remove('on');});
-  updateTime(); checkConflict();
-}
-function setAP(side,val){
-  if(side==='s') sAP=val; else eAP=val;
-  document.querySelectorAll('.pr-btn').forEach(function(b){b.classList.remove('on');});
-  syncAP(); updateTime(); checkConflict();
-}
-function syncAP(){
-  document.getElementById('s-am').classList.toggle('on',sAP==='AM');
-  document.getElementById('s-pm').classList.toggle('on',sAP==='PM');
-  document.getElementById('e-am').classList.toggle('on',eAP==='AM');
-  document.getElementById('e-pm').classList.toggle('on',eAP==='PM');
-}
-function updateTime(){
-  document.getElementById('s-h').textContent=pad(sH);
-  document.getElementById('s-m').textContent=pad(sM);
-  document.getElementById('e-h').textContent=pad(eH);
-  document.getElementById('e-m').textContent=pad(eM);
-  document.getElementById('r-start').textContent=fmtT(sH,sM,sAP);
-  document.getElementById('r-end').textContent=fmtT(eH,eM,eAP);
-  var diff=toMins(eH,eM,eAP)-toMins(sH,sM,sAP);
-  var dur=document.getElementById('r-dur');
-  if(diff<=0){
-    dur.textContent='⚠️'; dur.style.background='#ef4444';
-    document.getElementById('time-err').classList.remove('hidden');
-    document.getElementById('btn-n3').disabled=true;
-  } else {
-    var h2=Math.floor(diff/60),m2=diff%60;
-    dur.textContent=h2>0?(h2+'h'+(m2>0?' '+m2+'m':'')):(m2+'m');
-    dur.style.background='var(--primary)';
-    document.getElementById('time-err').classList.add('hidden');
-    document.getElementById('btn-n3').disabled=false;
+    return event.getId();
+  } catch (err) {
+    Logger.log('createCalendarEvent error: ' + err.message);
+    return '';
   }
 }
-function buildPresets(){
-  var list=PRESETS[selDur]||[];
-  var w=document.getElementById('presets');
-  if(!list.length){w.innerHTML='';return;}
-  w.innerHTML='<div class="pr-lbl">Quick ranges:</div><div class="pr-row">'+
-    list.map(function(p,i){return '<button class="pr-btn" onclick="applyPreset('+i+')">'+p.l+'</button>';}).join('')+'</div>';
-}
-function applyPreset(i){
-  var p=PRESETS[selDur][i];
-  sH=p.sH;sM=p.sM;sAP=p.sAP;eH=p.eH;eM=p.eM;eAP=p.eAP;
-  syncAP(); updateTime(); checkConflict();
-  document.querySelectorAll('.pr-btn').forEach(function(b,j){b.classList.toggle('on',j===i);});
-}
-function checkConflict(){
-  if(!selDate)return;
-  var approved=(calBk[toKey(selDate)]||[]).filter(function(b){return b.status==='Approved';});
-  var myS=toMins(sH,sM,sAP),myE=toMins(eH,eM,eAP);
-  var c=approved.some(function(b){var bs=parseT(b.time),be=parseT(b.endTime);return bs!==null&&be!==null&&myS<be&&myE>bs;});
-  document.getElementById('conflict').classList.toggle('hidden',!c);
+
+function deleteCalendarEvent(eventId) {
+  try {
+    if (!eventId) return;
+    var cal = CalendarApp.getCalendarById(CALENDAR_ID);
+    if (!cal) return;
+    var ev = cal.getEventById(eventId);
+    if (ev) ev.deleteEvent();
+  } catch (err) {
+    Logger.log('deleteCalendarEvent error: ' + err.message);
+  }
 }
 
-// ─── SUMMARY & SUBMIT ────────────────────────────────────────────────────────
-function buildSummary(){
-  // ── CHANGE 6: added Requirements row ──
-  document.getElementById('summ').innerHTML=
-    row('⏱ Session Type','<span class="pill pill-p">'+DUR_LBL[selDur]+'</span>')+
-    row('📅 Date',selDate.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'}))+
-    row('🕐 From','<span class="pill pill-t">'+fmtT(sH,sM,sAP)+'</span>')+
-    row('🕔 To','<span class="pill pill-t">'+fmtT(eH,eM,eAP)+'</span>')+
-    row('🗂 Type of Work',v('f-type'))+
-    row('🏫 Labs',escapeHtml(getSelectedLabs().join(', ')))+
-    row('📝 Details',escapeHtml(v('f-work-details')))+
-    row('👤 Name',v('f-name'))+
-    row('📞 Phone',v('f-phone'))+
-    row('📧 Email',v('f-email'))+
-    row('📋 Requirements',escapeHtml(getSelectedReqs().join(', ')||'None'));
+function hasPendingReschedule(row, C) {
+  return C.origDate >= 0 && String(row[C.origDate] || '').trim() !== '';
 }
-function row(l,val){return '<div class="sr"><span class="sl2">'+l+'</span><span class="sv">'+val+'</span></div>';}
 
-async function submitBooking(){
-  var btn=document.getElementById('btn-sub');
-  var err=document.getElementById('sub-err');
-  btn.disabled=true; btn.textContent='⏳ Submitting…';
-  var typeOfWork=v('f-type');
-  var labs=getSelectedLabs();
-  var workDetails=v('f-work-details');
-  // ── CHANGE 7: added typeOtherDetail and additionalRequirements to payload ──
-  var payload={
-    action:'book',
-    duration:DUR_LBL[selDur],
-    name:v('f-name'), phone:v('f-phone'), email:v('f-email'),
-    service:typeOfWork,
-    typeOfWork:typeOfWork,
-    labs:labs,
-    workDetails:workDetails,
-    typeOtherDetail:(typeOfWork==='Other'?(document.getElementById('f-type-other').value.trim()):''),
-    additionalRequirements:getSelectedReqs(),
-    date:selDate.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),
-    dateKey:toKey(selDate),
-    time:fmtT(sH,sM,sAP), endTime:fmtT(eH,eM,eAP)
+function restoreOriginalBooking(sheet, rowNumber, row, C) {
+  if (C.origDate    >= 0) sheet.getRange(rowNumber, C.date    + 1).setValue(row[C.origDate]    || '');
+  if (C.origTime    >= 0) sheet.getRange(rowNumber, C.time    + 1).setValue(row[C.origTime]    || '');
+  if (C.origEndTime >= 0) sheet.getRange(rowNumber, C.endTime + 1).setValue(row[C.origEndTime] || '');
+  if (C.origDateKey >= 0) sheet.getRange(rowNumber, C.dateKey + 1).setValue(row[C.origDateKey] || '');
+  if (C.status      >= 0) sheet.getRange(rowNumber, C.status  + 1).setValue('Approved');
+}
+
+function clearRescheduleSnapshot(sheet, rowNumber, C) {
+  if (C.origDate    >= 0) sheet.getRange(rowNumber, C.origDate    + 1).setValue('');
+  if (C.origTime    >= 0) sheet.getRange(rowNumber, C.origTime    + 1).setValue('');
+  if (C.origEndTime >= 0) sheet.getRange(rowNumber, C.origEndTime + 1).setValue('');
+  if (C.origDateKey >= 0) sheet.getRange(rowNumber, C.origDateKey + 1).setValue('');
+}
+
+function bookingFromOriginalSnapshot(row, C) {
+  return {
+    name:     C.name        >= 0 ? String(row[C.name]        || '') : '',
+    email:    C.email       >= 0 ? String(row[C.email]       || '') : '',
+    phone:    C.phone       >= 0 ? String(row[C.phone]       || '') : '',
+    service:  C.service     >= 0 ? String(row[C.service]     || '') : '',
+    duration: C.dur         >= 0 ? String(row[C.dur]         || '') : '',
+    date:     C.origDate    >= 0 ? fmtDate(row[C.origDate])         : '',
+    time:     C.origTime    >= 0 ? fmtTime(row[C.origTime])         : '',
+    endTime:  C.origEndTime >= 0 ? fmtTime(row[C.origEndTime])      : '',
+    dateKey:  C.origDateKey >= 0 ? fmtDateKey(row[C.origDateKey])   : ''
   };
-  var data=await apiPost(payload);
-  if(data&&data.success){
-    document.getElementById('step-5').classList.add('hidden');
-    document.getElementById('step-6').classList.remove('hidden');
-    document.getElementById('bid').textContent='KARIGAR-'+data.id.substring(0,8).toUpperCase();
-    await refreshCalendarData();
-  } else {
-    showEl(err,'⚠️ '+(data&&data.error?data.error:'Booking backend is not connected yet. Add your Apps Script URL in BACKEND_SCRIPT_URL inside the HTML file.'));
-    btn.disabled=false; btn.textContent='✅ Confirm Session';
+}
+
+function parseDateTime(dateKey, timeStr) {
+  try {
+    if (!dateKey || !timeStr) return null;
+    var dp = dateKey.split('-');
+    if (dp.length !== 3) return null;
+    var tm = String(timeStr).match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!tm) return null;
+    var h = parseInt(tm[1],10), m = parseInt(tm[2],10), ap = tm[3].toUpperCase();
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h  = 0;
+    return new Date(parseInt(dp[0],10), parseInt(dp[1],10)-1, parseInt(dp[2],10), h, m, 0);
+  } catch(e) { return null; }
+}
+
+// ── Emails ─────────────────────────────────────────────────────────────────────
+function sendOwnerEmail(id, data, isReschedule) {
+  try {
+    var base     = ScriptApp.getService().getUrl();
+    var shortId  = id.substring(0, 8).toUpperCase();
+    var approveL = base + '?action=approve&id=' + id + '&token=' + SECRET_TOKEN;
+    var declineL = base + '?action=decline&id=' + id + '&token=' + SECRET_TOKEN;
+    var subject  = isReschedule
+      ? '🔄 Reschedule Request: ' + (data.service||'') + ' — ' + (data.name||'')
+      : '🔔 New Booking: ' + (data.duration||'Session') + ' · ' + (data.service||'') + ' — ' + (data.name||'');
+
+    var html = '<div style="font-family:\'Segoe UI\',sans-serif;max-width:560px;margin:0 auto;background:#f3f4f8;padding:22px;border-radius:16px">'
+      + '<div style="background:linear-gradient(135deg,#1a1464,#4f46e5);color:white;padding:20px 24px;border-radius:12px 12px 0 0">'
+      + '<div style="font-size:.75rem;opacity:.75;margin-bottom:3px">Karigar – School of Applied Learning · Lend A Hand India</div>'
+      + '<h2 style="margin:0;font-size:1.2rem">' + (isReschedule ? '🔄 Reschedule Request' : '🔧 New Session Booking') + '</h2>'
+      + '<p style="margin:4px 0 0;opacity:.78;font-size:.8rem">ID: <strong>' + shortId + '</strong></p>'
+      + '</div>'
+      + '<div style="background:white;padding:20px 24px;border-radius:0 0 12px 12px">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:.9rem">'
+      + tr('⏱ Session Type', data.duration||'—', true, '#4f46e5')
+      + tr('👤 Name',         data.name||'')
+      + tr('📞 Phone',        data.phone||'', true)
+      + tr('📧 Email',        data.email||'')
+      + tr('🏷 Type of Work', data.typeOfWork||data.service||'', true)
+      + tr('🏫 Labs',         normalizeLabs(data.labs || data.lab || ''), false)
+      + tr('📝 Details',      data.workDetails||'', true)
+      + tr('📋 Requirements', data.additionalRequirements||'—', false)  // FIX (Bug 6)
+      + tr('📅 Date',         data.date||'', true)
+      + tr('🕐 From',         data.time||'')
+      + tr('🕔 To',           data.endTime||'—', true)
+      + '</table>'
+      + '<div style="text-align:center;margin-top:26px">'
+      + '<a href="' + approveL + '" style="background:#16a34a;color:white;padding:13px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:.95rem;margin-right:10px;display:inline-block">✅ Approve</a>'
+      + '<a href="' + declineL + '" style="background:#ef4444;color:white;padding:13px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:.95rem;display:inline-block">❌ Decline</a>'
+      + '</div>'
+      + '<p style="text-align:center;color:#a0aec0;font-size:.71rem;margin-top:12px">Approving will create a Google Calendar event and notify the customer.</p>'
+      + '<p style="text-align:center;margin-top:8px;font-size:.71rem;color:#cbd5e0">'
+      + 'Need to cancel an <em>already-approved</em> booking? '
+      + '<a href="' + base + '?action=cancel&id=' + id + '&token=' + SECRET_TOKEN + '" style="color:#ef4444">Cancel booking</a>'
+      + '</p>'
+      + '</div></div>';
+
+    GmailApp.sendEmail(OWNER_EMAIL, subject,
+      (data.name||'') + ' | ' + (data.typeOfWork||data.service||'') + ' | ' + (data.date||'') + ' | ' + (data.time||'') + ' – ' + (data.endTime||''),
+      { htmlBody: html }
+    );
+  } catch(err) { Logger.log('sendOwnerEmail error: ' + err.message); }
+}
+
+function sendCustomerEmail(booking, status) {
+  try {
+    var ok  = (status === 'Approved');
+    var bg  = ok ? 'linear-gradient(135deg,#059669,#10b981)' : 'linear-gradient(135deg,#dc2626,#ef4444)';
+    var ttl = ok ? '✅ Session Confirmed!' : '❌ Session Not Approved';
+    var msg = ok
+      ? 'Your session has been <strong style="color:#16a34a">approved</strong>! A Google Calendar invite has been sent to your email. Please arrive a few minutes early at Karigar, School of Applied Learning, Pune.'
+      : 'Your session request was <strong style="color:#ef4444">not approved</strong> this time. Please visit our site to choose another slot.';
+
+    var html = '<div style="font-family:\'Segoe UI\',sans-serif;max-width:520px;margin:0 auto;background:#f3f4f8;padding:22px;border-radius:16px">'
+      + '<div style="background:' + bg + ';color:white;padding:18px 22px;border-radius:12px 12px 0 0">'
+      + '<div style="font-size:.72rem;opacity:.8;margin-bottom:3px">Karigar – School of Applied Learning · Lend A Hand India</div>'
+      + '<h2 style="margin:0;font-size:1.15rem">' + ttl + '</h2>'
+      + '</div>'
+      + '<div style="background:white;padding:20px 22px;border-radius:0 0 12px 12px">'
+      + '<p>Hi <strong>' + booking.name + '</strong>,</p>'
+      + '<p style="margin:9px 0;color:#374151;line-height:1.6">' + msg + '</p>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:.86rem;margin:12px 0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">'
+      + tr('⏱ Session Type', booking.duration||'—', true)
+      + tr('🏷 Type of Work', (booking.typeOfWork || booking.service))
+      + tr('🏫 Labs',         booking.labs||'—', true)
+      + tr('📝 Details',      booking.workDetails||'—')
+      + tr('📅 Date',         booking.date, true)
+      + tr('🕐 From',         booking.time)
+      + tr('🕔 To',           booking.endTime||'—', true)
+      + '</table>'
+      + (ok ? '<p style="background:#f0fdf4;color:#166534;padding:9px 13px;border-radius:8px;font-size:.82rem;margin-bottom:12px">📍 <strong>Karigar – School of Applied Learning</strong><br>Lend A Hand India · Pune, Maharashtra</p>' : '')
+      + '<div style="text-align:center;margin-top:14px">'
+      + '<a href="' + SITE_URL + '" style="background:#4f46e5;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">'
+      + (ok ? '🔍 View Booking' : '📅 Book Another Session') + '</a></div></div></div>';
+
+    GmailApp.sendEmail(booking.email,
+      ok ? '✅ Your Karigar Session is Confirmed!' : '❌ Karigar Session Booking Update',
+      ok
+        ? 'Confirmed: ' + (booking.typeOfWork || booking.service) + ' on ' + booking.date + ' · ' + booking.time + ' – ' + (booking.endTime||'')
+        : 'Not approved. Please book another slot at ' + SITE_URL,
+      { htmlBody: html }
+    );
+  } catch(err) { Logger.log('sendCustomerEmail error: ' + err.message); }
+}
+
+function sendRescheduleDeclinedEmail(booking) {
+  try {
+    var html = '<div style="font-family:\'Segoe UI\',sans-serif;max-width:520px;margin:0 auto;background:#f3f4f8;padding:22px;border-radius:16px">'
+      + '<div style="background:linear-gradient(135deg,#d97706,#f59e0b);color:white;padding:18px 22px;border-radius:12px 12px 0 0">'
+      + '<div style="font-size:.72rem;opacity:.8;margin-bottom:3px">Karigar – School of Applied Learning · Lend A Hand India</div>'
+      + '<h2 style="margin:0;font-size:1.15rem">🔄 Reschedule Not Approved</h2>'
+      + '</div>'
+      + '<div style="background:white;padding:20px 22px;border-radius:0 0 12px 12px">'
+      + '<p>Hi <strong>' + booking.name + '</strong>,</p>'
+      + '<p style="margin:9px 0;color:#374151;line-height:1.6">'
+      + 'Your reschedule request could not be approved, so your <strong>original confirmed booking is still active</strong>.'
+      + '</p>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:.86rem;margin:12px 0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">'
+      + tr('⏱ Session Type',    booking.duration||'—', true)
+      + tr('🔧 Skill Area',     booking.typeOfWork || booking.service)
+      + tr('📅 Confirmed Date', booking.date, true)
+      + tr('🕐 From',           booking.time)
+      + tr('🕔 To',             booking.endTime||'—', true)
+      + '</table>'
+      + '<p style="background:#fffbeb;color:#92400e;padding:9px 13px;border-radius:8px;font-size:.82rem;margin-bottom:12px">'
+      + 'Your original Google Calendar event has been kept unchanged.'
+      + '</p>'
+      + '<div style="text-align:center;margin-top:14px">'
+      + '<a href="' + SITE_URL + '" style="background:#4f46e5;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">'
+      + '🔍 View Booking</a></div></div></div>';
+
+    GmailApp.sendEmail(
+      booking.email,
+      '🔄 Karigar Reschedule Update',
+      'Your reschedule request was not approved. Your original booking on ' + booking.date + ' at ' + booking.time + ' is still confirmed.',
+      { htmlBody: html }
+    );
+  } catch(err) { Logger.log('sendRescheduleDeclinedEmail error: ' + err.message); }
+}
+
+function sendCancellationEmail(booking) {
+  try {
+    var html = '<div style="font-family:\'Segoe UI\',sans-serif;max-width:520px;margin:0 auto;background:#f3f4f8;padding:22px;border-radius:16px">'
+      + '<div style="background:linear-gradient(135deg,#4b5563,#6b7280);color:white;padding:18px 22px;border-radius:12px 12px 0 0">'
+      + '<div style="font-size:.72rem;opacity:.8;margin-bottom:3px">Karigar – School of Applied Learning · Lend A Hand India</div>'
+      + '<h2 style="margin:0;font-size:1.15rem">🚫 Session Cancelled</h2>'
+      + '</div>'
+      + '<div style="background:white;padding:20px 22px;border-radius:0 0 12px 12px">'
+      + '<p>Hi <strong>' + booking.name + '</strong>,</p>'
+      + '<p style="margin:9px 0;color:#374151;line-height:1.6">'
+      + 'We\'re sorry to let you know that your confirmed session has been <strong>cancelled</strong> by the Karigar team. '
+      + 'If you have any questions, please reach out to us directly.'
+      + '</p>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:.86rem;margin:12px 0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">'
+      + tr('🏷 Type of Work', booking.typeOfWork || booking.service, true)
+      + tr('📅 Date',         booking.date)
+      + tr('🕐 From',         booking.time, true)
+      + tr('🕔 To',           booking.endTime || '—')
+      + tr('🏫 Labs',         booking.labs || '—', true)
+      + '</table>'
+      + '<p style="background:#f9fafb;color:#6b7280;padding:9px 13px;border-radius:8px;font-size:.82rem;margin-bottom:12px">'
+      + 'The Google Calendar invite for this session has been removed.'
+      + '</p>'
+      + '<div style="text-align:center;margin-top:14px">'
+      + '<a href="' + SITE_URL + '" style="background:#4f46e5;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">'
+      + '📅 Book a New Session</a></div></div></div>';
+
+    GmailApp.sendEmail(
+      booking.email,
+      '🚫 Karigar Session Cancelled',
+      'Your session on ' + booking.date + ' at ' + booking.time + ' has been cancelled. Please visit ' + SITE_URL + ' to book a new slot.',
+      { htmlBody: html }
+    );
+  } catch(err) { Logger.log('sendCancellationEmail error: ' + err.message); }
+}
+
+
+// Column layout (1-indexed):
+//  1  ID                    9  Submitted At       17 OriginalDateKey
+//  2  Name                 10  Duration           18 Type Of Work
+//  3  Phone                11  End Time           19 Labs
+//  4  Email                12  DateKey            20 Work Details
+//  5  Service              13  CalEventId         21 Additional Requirements ← FIX (Bug 4)
+//  6  Date                 14  OriginalDate
+//  7  Time                 15  OriginalTime
+//  8  Status               16  OriginalEndTime
+
+function getOrCreateSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow([
+      'ID','Name','Phone','Email','Service','Date','Time','Status','Submitted At',
+      'Duration','End Time','DateKey','CalEventId','OriginalDate','OriginalTime',
+      'OriginalEndTime','OriginalDateKey','Type Of Work','Labs','Work Details',
+      'Additional Requirements'           // FIX (Bug 4): col 21
+    ]);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1,1,1,21).setFontWeight('bold').setBackground('#4f46e5').setFontColor('white');  // FIX (Bug 4): was 20
+    sheet.setColumnWidth(1, 260);
+  }
+  return sheet;
+}
+
+function ensureNewColumns(sheet) {
+  var hdr  = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var norm = hdr.map(function(x){ return String(x).toLowerCase().replace(/\s+/g,''); });
+  var toAdd = [];
+  if (norm.indexOf('duration')               === -1) toAdd.push('Duration');
+  if (norm.indexOf('endtime')                === -1) toAdd.push('End Time');
+  if (norm.indexOf('datekey')                === -1) toAdd.push('DateKey');
+  if (norm.indexOf('caleventid')             === -1) toAdd.push('CalEventId');
+  if (norm.indexOf('typeofwork')             === -1) toAdd.push('Type Of Work');
+  if (norm.indexOf('labs')                   === -1) toAdd.push('Labs');
+  if (norm.indexOf('workdetails')            === -1) toAdd.push('Work Details');
+  if (norm.indexOf('originaldate')           === -1) toAdd.push('OriginalDate');
+  if (norm.indexOf('originaltime')           === -1) toAdd.push('OriginalTime');
+  if (norm.indexOf('originalendtime')        === -1) toAdd.push('OriginalEndTime');
+  if (norm.indexOf('originaldatekey')        === -1) toAdd.push('OriginalDateKey');
+  if (norm.indexOf('additionalrequirements') === -1) toAdd.push('Additional Requirements');  // FIX (Bug 4)
+  if (!toAdd.length) return;
+
+  var col = sheet.getLastColumn() + 1;
+  toAdd.forEach(function(name) {
+    sheet.getRange(1, col).setValue(name).setFontWeight('bold').setBackground('#4f46e5').setFontColor('white');
+    col++;
+  });
+
+  var allHdr  = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var allNorm = allHdr.map(function(x){ return String(x).toLowerCase().replace(/\s+/g,''); });
+  var C       = colMap(allNorm);
+  if (C.date < 0 || C.dateKey < 0) return;
+
+  var numRows = sheet.getLastRow();
+  for (var r = 2; r <= numRows; r++) {
+    var existing = fmtDateKey(sheet.getRange(r, C.dateKey + 1).getValue());
+    if (existing.length >= 8) continue;
+    var dateVal = sheet.getRange(r, C.date + 1).getValue();
+    var dk      = fmtDateKey(dateVal) || dateToKey(String(dateVal || ''));
+    if (dk) sheet.getRange(r, C.dateKey + 1).setValue(dk);
   }
 }
 
-// ─── STATUS CHECK ────────────────────────────────────────────────────────────
-async function checkStatus(){
-  var q=document.getElementById('sq').value.trim();
-  var out=document.getElementById('st-out');
-  if(!q){out.innerHTML='<div class="alert ai" style="margin-top:12px">Please enter your email or booking ID.</div>';return;}
-  out.innerHTML='<div class="spin"></div>';
-  var data=await apiGetQuery('check','query='+encodeURIComponent(q));
-  if(!data){out.innerHTML='<div class="alert ae" style="margin-top:12px">Status lookup is not connected yet. Add your Apps Script URL in BACKEND_SCRIPT_URL inside the HTML file.</div>';return;}
-  if(data.success&&data.bookings&&data.bookings.length>0){
-    out.innerHTML=data.bookings.map(function(b){
-      var mc=b.status==='Approved'?'sm-a':b.status==='Declined'||b.status==='Cancelled'?'sm-d':'sm-p';
-      var mt=b.status==='Approved'?'✅ Confirmed! The Karigar team will be ready at your start time.'
-        :b.status==='Declined'?'❌ Not approved. Please book a different slot.'
-        :b.status==='Cancelled'?'🚫 This session was cancelled by the team. Please book a new slot.'
-        :'⏳ Pending review — you\'ll be notified once confirmed.';
-      var canReschedule=(b.status==='Pending'||b.status==='Approved');
-      return '<div class="stcard">'
-        +'<div class="stcard-head"><strong>'+(b.typeOfWork||b.service||'—')+'</strong><span class="stb stb-'+b.status+'">'+b.status+'</span></div>'
-        +row('⏱ Session Type',b.duration||'—')+row('🏷 Type of Work',b.typeOfWork||b.service||'—')+row('🏫 Labs',b.labs||'—')+row('📝 Details',b.workDetails||'—')+row('📅 Date',b.date)+row('🕐 From',b.time||'—')+row('🕔 To',b.endTime||'—')
-        +'<div class="stmsg '+mc+'">'+mt+'</div>'
-        +(canReschedule?rescheduleBlock(b):'')
-        +'</div>';
-    }).join('');
-  } else {
-    out.innerHTML='<div class="alert ai" style="margin-top:12px">No bookings found for that email or ID.</div>';
+function colMap(norm) {
+  return {
+    id:             colIdx(norm, ['id']),
+    name:           colIdx(norm, ['name']),
+    phone:          colIdx(norm, ['phone']),
+    email:          colIdx(norm, ['email']),
+    service:        colIdx(norm, ['service','skillarea']),
+    date:           colIdx(norm, ['date']),
+    time:           colIdx(norm, ['starttime','time']),
+    endTime:        colIdx(norm, ['endtime']),
+    dur:            colIdx(norm, ['duration']),
+    status:         colIdx(norm, ['status']),
+    dateKey:        colIdx(norm, ['datekey']),
+    calEventId:     colIdx(norm, ['caleventid']),
+    typeOfWork:     colIdx(norm, ['typeofwork']),
+    labs:           colIdx(norm, ['labs']),
+    workDetails:    colIdx(norm, ['workdetails']),
+    additionalReqs: colIdx(norm, ['additionalrequirements']),  // FIX (Bug 4)
+    origDate:       colIdx(norm, ['originaldate']),
+    origTime:       colIdx(norm, ['originaltime']),
+    origEndTime:    colIdx(norm, ['originalendtime']),
+    origDateKey:    colIdx(norm, ['originaldatekey'])
+  };
+}
+
+function rowToObj(row, C) {
+  return {
+    name:                  C.name          >= 0 ? String(row[C.name]          || '') : '',
+    email:                 C.email         >= 0 ? String(row[C.email]         || '') : '',
+    phone:                 C.phone         >= 0 ? String(row[C.phone]         || '') : '',
+    service:               C.service       >= 0 ? String(row[C.service]       || '') : '',
+    typeOfWork:            C.typeOfWork    >= 0 ? String(row[C.typeOfWork]    || '') : '',
+    labs:                  C.labs          >= 0 ? String(row[C.labs]          || '') : '',
+    workDetails:           C.workDetails   >= 0 ? String(row[C.workDetails]   || '') : '',
+    additionalRequirements:C.additionalReqs >= 0 ? String(row[C.additionalReqs]|| '') : '',  // FIX (Bug 6)
+    duration:              C.dur           >= 0 ? String(row[C.dur]           || '') : '',
+    date:                  C.date          >= 0 ? fmtDate(row[C.date])                : '',
+    time:                  C.time          >= 0 ? fmtTime(row[C.time])                : '',
+    endTime:               C.endTime       >= 0 ? fmtTime(row[C.endTime])             : '',
+    dateKey:               C.dateKey       >= 0 ? fmtDateKey(row[C.dateKey])          : '',
+    calEventId:            C.calEventId    >= 0 ? String(row[C.calEventId]    || '') : ''
+  };
+}
+
+function colIdx(normHeaders, options) {
+  for (var i = 0; i < options.length; i++) {
+    var idx = normHeaders.indexOf(options[i]);
+    if (idx !== -1) return idx;
   }
+  return -1;
 }
 
-function buildSelectableTimes(){
-  var out=[];
-  for(var mins=8*60; mins<=18*60; mins+=30){
-    var h24=Math.floor(mins/60), m=mins%60;
-    var ap=h24>=12?'PM':'AM';
-    var h12=h24%12; if(h12===0) h12=12;
-    out.push(h12+':'+(m===0?'00':pad(m))+' '+ap);
+function dateToKey(s) {
+  if (!s) return '';
+  s = String(s).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var M = { january:1,february:2,march:3,april:4,may:5,june:6,
+            july:7,august:8,september:9,october:10,november:11,december:12,
+            jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
+  var m = s.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (m && M[m[2].toLowerCase()])
+    return m[3] + '-' + pad(M[m[2].toLowerCase()]) + '-' + pad(parseInt(m[1],10));
+  m = s.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (m && M[m[1].toLowerCase()])
+    return m[3] + '-' + pad(M[m[1].toLowerCase()]) + '-' + pad(parseInt(m[2],10));
+  try {
+    var d = new Date(s);
+    if (!isNaN(d)) return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  } catch(e) {}
+  return '';
+}
+
+function pad(n) { return n < 10 ? '0'+n : ''+n; }
+
+function normalizeLabs(val) {
+  if (Array.isArray(val)) {
+    return val.map(function(x){ return String(x || '').trim(); }).filter(Boolean).join(', ');
   }
-  return out;
+  return String(val || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean).join(', ');
 }
 
-var RESCHEDULE_TIME_OPTIONS=buildSelectableTimes();
-
-function renderRescheduleTimeOptions(selectedValue){
-  return '<option value="">— Select time —</option>'+RESCHEDULE_TIME_OPTIONS.map(function(t){
-    return '<option value="'+t+'"'+(t===selectedValue?' selected':'')+'>'+t+'</option>';
-  }).join('');
+function parseDateKeyValue(dateKey) {
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey))) return null;
+  var dp = String(dateKey).split('-');
+  return new Date(parseInt(dp[0],10), parseInt(dp[1],10)-1, parseInt(dp[2],10), 0, 0, 0, 0);
 }
 
-function populateRescheduleEndOptions(bookingId, selectedEnd){
-  var startVal=document.getElementById('rs-start-'+bookingId).value;
-  var endEl=document.getElementById('rs-end-'+bookingId);
-  var startMins=parseT(startVal);
-  var opts='<option value="">— Select end time —</option>';
-  RESCHEDULE_TIME_OPTIONS.forEach(function(t){
-    var mins=parseT(t);
-    if(startMins===null || mins>startMins){
-      opts+='<option value="'+t+'"'+(t===selectedEnd?' selected':'')+'>'+t+'</option>';
+function minLeadDate() {
+  var todayStr = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  var base = parseDateKeyValue(todayStr);
+  base.setDate(base.getDate() + MIN_LEAD_DAYS);
+  return base;
+}
+
+function isBookableDateKey(dateKey) {
+  var d = parseDateKeyValue(dateKey);
+  if (!d) return false;
+  return d.getTime() >= minLeadDate().getTime();
+}
+
+function tr(label, val, shaded, color) {
+  var bg  = shaded ? 'background:#f7fafc;' : '';
+  var col = color  ? 'color:' + color + ';' : 'color:#1a202c;';
+  return '<tr style="' + bg + '">'
+    + '<td style="padding:9px;color:#718096;border-bottom:1px solid #edf2f7;width:36%">' + label + '</td>'
+    + '<td style="padding:9px;font-weight:600;border-bottom:1px solid #edf2f7;' + col + '">' + val + '</td>'
+    + '</tr>';
+}
+
+function jsonOut(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+function htmlPage(html) { return HtmlService.createHtmlOutput(html); }
+
+function successHtml(title, msg) {
+  return successHtmlWithNote(title, msg, '');
+}
+function successHtmlWithNote(title, msg, note) {
+  return '<html><body style="font-family:\'Segoe UI\',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f3f4f8">'
+    + '<div style="text-align:center;background:white;padding:40px 34px;border-radius:16px;max-width:500px;box-shadow:0 4px 20px rgba(0,0,0,.1)">'
+    + '<div style="font-size:2.8rem;margin-bottom:10px">🎉</div>'
+    + '<h2 style="color:#1a202c;margin-bottom:10px">' + title + '</h2>'
+    + '<p style="color:#718096;line-height:1.7">' + msg + '</p>'
+    + note
+    + '<p style="margin-top:16px;font-size:.75rem;color:#a0aec0">Karigar – School of Applied Learning · Lend A Hand India · Pune</p>'
+    + '</div></body></html>';
+}
+function errorHtml(msg) {
+  return '<html><body style="font-family:\'Segoe UI\',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f3f4f8">'
+    + '<div style="text-align:center;background:white;padding:40px 34px;border-radius:16px;max-width:440px;box-shadow:0 4px 20px rgba(0,0,0,.1)">'
+    + '<div style="font-size:2.8rem;margin-bottom:10px">⚠️</div>'
+    + '<h2 style="color:#1a202c;margin-bottom:8px">Error</h2>'
+    + '<p style="color:#718096">' + msg + '</p>'
+    + '</div></body></html>';
+}
+function infoHtml(title, msg) {
+  return '<html><body style="font-family:\'Segoe UI\',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f3f4f8">'
+    + '<div style="text-align:center;background:white;padding:40px 34px;border-radius:16px;max-width:460px;box-shadow:0 4px 20px rgba(0,0,0,.1)">'
+    + '<div style="font-size:2.8rem;margin-bottom:10px">ℹ️</div>'
+    + '<h2 style="color:#1a202c;margin-bottom:8px">' + title + '</h2>'
+    + '<p style="color:#718096;line-height:1.6">' + msg + '</p>'
+    + '</div></body></html>';
+}
+
+
+function sendOwnerApprovalEmail(id, booking) {
+  try {
+    var base    = ScriptApp.getService().getUrl();
+    var cancelL = base + '?action=cancel&id=' + id + '&token=' + SECRET_TOKEN;
+    var shortId = id.substring(0, 8).toUpperCase();
+
+    var html = '<div style="font-family:\'Segoe UI\',sans-serif;max-width:560px;margin:0 auto;background:#f3f4f8;padding:22px;border-radius:16px">'
+      + '<div style="background:linear-gradient(135deg,#166534,#16a34a);color:white;padding:20px 24px;border-radius:12px 12px 0 0">'
+      + '<div style="font-size:.75rem;opacity:.75;margin-bottom:3px">Karigar – School of Applied Learning · Lend A Hand India</div>'
+      + '<h2 style="margin:0;font-size:1.2rem">✅ Session Approved</h2>'
+      + '<p style="margin:4px 0 0;opacity:.78;font-size:.8rem">ID: <strong>' + shortId + '</strong></p>'
+      + '</div>'
+      + '<div style="background:white;padding:20px 24px;border-radius:0 0 12px 12px">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:.9rem">'
+      + tr('👤 Name',         booking.name||'—', false)
+      + tr('🏷 Type of Work', booking.typeOfWork||booking.service||'—', true)
+      + tr('🏫 Labs',         booking.labs||'—', false)
+      + tr('📅 Date',         booking.date||'—', true)
+      + tr('🕐 From',         booking.time||'—', false)
+      + tr('🕔 To',           booking.endTime||'—', true)
+      + tr('📋 Requirements', booking.additionalRequirements||'None', false)
+      + '</table>'
+      + '<div style="margin-top:24px;padding:16px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;text-align:center">'
+      + '<p style="margin:0 0 10px;font-size:.82rem;color:#991b1b;font-weight:600">Need to cancel this session?</p>'
+      + '<a href="' + cancelL + '" style="background:#ef4444;color:white;padding:10px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.88rem;display:inline-block">🚫 Cancel This Booking</a>'
+      + '<p style="margin:10px 0 0;font-size:.72rem;color:#fca5a5">This link will cancel the session, remove the calendar event, and notify the customer.</p>'
+      + '</div>'
+      + '</div></div>';
+
+    GmailApp.sendEmail(
+      OWNER_EMAIL,
+      '✅ Approved: ' + (booking.typeOfWork || booking.service) + ' — ' + booking.date + ' · ' + shortId,
+      'Approved: ' + booking.name + ' | ' + (booking.typeOfWork || booking.service) + ' | ' + booking.date + ' | ' + booking.time + ' – ' + (booking.endTime || ''),
+      { htmlBody: html }
+    );
+  } catch(err) { Logger.log('sendOwnerApprovalEmail error: ' + err.message); }
+}
+
+
+  const reqRaw = booking.additionalRequirements;
+  if (!reqRaw || String(reqRaw).trim() === '') return;
+
+  const reqList = String(reqRaw).split(',').map(s => s.trim()).filter(Boolean);
+
+  // Group by recipient (same logic as sendRequirementEmails)
+  const grouped = {};
+  reqList.forEach(function(reqStr) {
+    const colonIdx = reqStr.indexOf(':');
+    const key     = colonIdx > -1 ? reqStr.substring(0, colonIdx).trim() : reqStr.trim();
+    const contact = REQ_CONTACTS[key];
+    if (!contact) return;
+    if (!grouped[contact.email]) grouped[contact.email] = { contact, items: [] };
+    grouped[contact.email].items.push(key);
+  });
+
+  if (Object.keys(grouped).length === 0) return;
+
+  Object.keys(grouped).forEach(function(email) {
+    const { contact, items } = grouped[email];
+    const itemLines = items.map(function(k){ return '  • ' + k; }).join('\n');
+    const subject = '[Karigar] 🚫 CANCELLED — Please stand down for ' + booking.date;
+    const body =
+      'Hi ' + contact.name + ',\n\n' +
+      'A session you were arranging for has been CANCELLED.\n' +
+      'Please do NOT proceed with any arrangements.\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'CANCELLED SESSION\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'Guest  : ' + booking.name     + '\n' +
+      'Date   : ' + booking.date     + '\n' +
+      'Time   : ' + booking.time + ' → ' + booking.endTime + '\n' +
+      'Type   : ' + (booking.typeOfWork || '—') + '\n' +
+      'Labs   : ' + (booking.labs || '—') + '\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'YOUR ITEMS TO CANCEL (' + contact.role + ')\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      itemLines + '\n\n' +
+      'Please cancel or hold any arrangements already made for this session.\n\n' +
+      'Karigar Booking System\n' +
+      'Lend A Hand India · Pune';
+
+    GmailApp.sendEmail(email, subject, body);
+  });
+}
+// FIX (Bug 1): duplicate `const SHEET_NAME = 'Bookings'` removed — already declared at top of file.
+
+// FIX (Bug 2): STATUS_COL corrected from 5 → 8.
+//   Col 5 = Service; col 8 = Status (see sheet layout comment above).
+const STATUS_COL = 8;
+
+// FIX (Bug 3): DATA_COLS numbers corrected to match actual sheet column layout.
+//   Only `name: 2` was correct before; everything else pointed at the wrong column.
+const DATA_COLS = {
+  name:                   2,   // Name
+  date:                   6,   // Date
+  time:                   7,   // Time
+  endTime:               11,   // End Time
+  duration:              10,   // Duration
+  typeOfWork:            18,   // Type Of Work
+  labs:                  19,   // Labs
+  additionalRequirements:21,   // Additional Requirements  ← FIX (Bug 4)
+};
+
+const REQ_CONTACTS = {
+  'Food & Refreshments':  { name: 'Ashish',   email: 'ashish.chaudhari@lendahandindia.org', role: 'Admin / Catering'  },
+  'Stationery':           { name: 'Rohit',    email: 'rohit.panchal@lendahandindia.org',    role: 'Stationery'        },
+  'TV / Projector':       { name: 'Person 3', email: 'person3@example.com',                 role: 'AV Equipment'      },
+  'Wi-Fi':                { name: 'Person 3', email: 'person3@example.com',                 role: 'IT / Wi-Fi'        },
+  'Extra Chairs / Tables':{ name: 'Person 1', email: 'person1@example.com',                 role: 'Admin / Logistics' },
+  'Video Conferencing':   { name: 'Person 3', email: 'person3@example.com',                 role: 'AV Equipment'      },
+  'Other':                { name: 'Person 1', email: 'person1@example.com',                 role: 'Admin'             },
+};
+
+// ─── TRIGGER ─────────────────────────────────────────────────────────────────
+// FIX (Bug 5): This function uses GmailApp and CANNOT run as a simple trigger.
+// It MUST be registered as an installable trigger:
+//   Apps Script editor → Triggers (clock icon) → Add Trigger
+//   Function: onEditTrigger | Event source: From spreadsheet | Event type: On edit
+function onEditTrigger(e) {
+  const sheet = e.source.getActiveSheet();
+  if (sheet.getName() !== SHEET_NAME) return;
+
+  const range = e.range;
+  if (range.getColumn() !== STATUS_COL) return;  // FIX (Bug 2): now correctly targets col 8
+  if (e.value !== 'Approved') return;
+  if (e.oldValue === 'Approved') return;
+
+  const row     = range.getRow();
+  const rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  // FIX (Bug 3): DATA_COLS now have correct column numbers.
+  // FIX (Bug 3+extra): use fmtDate/fmtTime so Date objects from the sheet render correctly.
+  const booking = {
+    name:                   String(rowData[DATA_COLS.name - 1]     || ''),
+    date:                   fmtDate(rowData[DATA_COLS.date - 1]),
+    time:                   fmtTime(rowData[DATA_COLS.time - 1]),
+    endTime:                fmtTime(rowData[DATA_COLS.endTime - 1]),
+    duration:               String(rowData[DATA_COLS.duration - 1]               || ''),
+    typeOfWork:             String(rowData[DATA_COLS.typeOfWork - 1]             || ''),
+    labs:                   String(rowData[DATA_COLS.labs - 1]                   || ''),
+    additionalRequirements: String(rowData[DATA_COLS.additionalRequirements - 1] || ''),  // FIX (Bug 4)
+  };
+
+  sendRequirementEmails(booking);
+}
+
+// ─── EMAIL SENDER ─────────────────────────────────────────────────────────────
+function sendRequirementEmails(booking) {
+  const reqRaw = booking.additionalRequirements;
+  if (!reqRaw || String(reqRaw).trim() === '') return;
+
+  // Parse comma-separated string: "Food & Refreshments: 50 veg, Stationery, Wi-Fi: need 4G hotspot"
+  const reqList = String(reqRaw).split(',').map(s => s.trim()).filter(Boolean);
+
+  // Group by recipient, batching multiple items into one email
+  const grouped = {};
+  reqList.forEach(function(reqStr) {
+    const colonIdx = reqStr.indexOf(':');
+    const key  = colonIdx > -1 ? reqStr.substring(0, colonIdx).trim() : reqStr.trim();
+    const note = colonIdx > -1 ? reqStr.substring(colonIdx + 1).trim() : '';
+    const contact = REQ_CONTACTS[key];
+    if (!contact) return;
+
+    if (!grouped[contact.email]) {
+      grouped[contact.email] = { contact, items: [] };
     }
+    grouped[contact.email].items.push({ key, note });
   });
-  endEl.innerHTML=opts;
-}
 
-function onRescheduleStartChange(bookingId){
-  populateRescheduleEndOptions(bookingId, '');
-}
+  if (Object.keys(grouped).length === 0) return;
 
-function rescheduleBlock(booking){
-  return '<div class="reschedule-box"><h4>🔄 Need a different time?</h4>'
-    +'<div class="reschedule-form">'
-    +'<div class="fg"><label>New Date (must be at least 10 full days from today)</label>'
-    +'<input type="date" class="rs-date" id="rs-date-'+booking.id+'" min="'+rsMinDate()+'" style="border-color:#e8c97a"/></div>'
-    +'<div class="fg"><label>Start Time</label>'
-    +'<select id="rs-start-'+booking.id+'" onchange="onRescheduleStartChange(\''+booking.id+'\')" style="border-color:#e8c97a">'+renderRescheduleTimeOptions('')+'</select></div>'
-    +'<div class="fg"><label>End Time</label>'
-    +'<select id="rs-end-'+booking.id+'" style="border-color:#e8c97a"><option value="">— Select end time —</option></select></div>'
-    +'<div style="font-size:.74rem;color:#92400e;margin-top:-4px;margin-bottom:10px">Select the time from the list. Manual typing is disabled.</div>'
-    +'<button class="btn-accent" style="width:100%" onclick="submitReschedule(\''+booking.id+'\')">📅 Request Reschedule</button>'
-    +'<div id="rs-msg-'+booking.id+'" style="margin-top:8px"></div>'
-    +'</div></div>';
-}
+  Object.keys(grouped).forEach(function(email) {
+    const { contact, items } = grouped[email];
 
-async function submitReschedule(bookingId){
-  var newDate=document.getElementById('rs-date-'+bookingId).value;
-  var newStart=document.getElementById('rs-start-'+bookingId).value;
-  var newEnd=document.getElementById('rs-end-'+bookingId).value;
-  var msgEl=document.getElementById('rs-msg-'+bookingId);
-  if(!newDate||!newStart||!newEnd){
-    msgEl.innerHTML='<div class="msg msg-err">Please select a new date, start time, and end time.</div>'; return;
-  }
-  if(parseT(newEnd)<=parseT(newStart)){
-    msgEl.innerHTML='<div class="msg msg-err">End time must be after start time.</div>'; return;
-  }
-  var parts=newDate.split('-');
-  var d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
-  d.setHours(0,0,0,0);
-  if(!isDateBookable(d)){msgEl.innerHTML='<div class="msg msg-err">Bookings must be made at least 10 full days in advance.</div>';return;}
-  msgEl.innerHTML='<div class="msg msg-warn">⏳ Submitting reschedule request…</div>';
-  var data=await apiPost({action:'reschedule',bookingId:bookingId,newDateKey:newDate,
-    newDate:d.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),
-    newTime:newStart,newEndTime:newEnd});
-  if(data&&data.success){
-    msgEl.innerHTML='<div class="msg msg-ok">✅ Reschedule request submitted! The team will review and confirm.</div>';
-    await refreshCalendarData();
-    if(document.getElementById('sq').value.trim()) setTimeout(checkStatus, 500);
-  } else {
-    msgEl.innerHTML='<div class="msg msg-err">⚠️ '+(data&&data.error?data.error:'Could not submit. Try again.')+'</div>';
-  }
-}
+    const itemLines = items.map(i =>
+      '  • ' + i.key + (i.note ? '\n    Note: ' + i.note : '')
+    ).join('\n');
 
-// ─── API HELPERS ─────────────────────────────────────────────────────────────
-async function apiGet(action){
-  return apiGetQuery(action,'');
-}
-async function apiGetQuery(action,params){
-  if(!SCRIPT_URL()) return null;
-  try{
-    var url=SCRIPT_URL()+'?action='+action+(params?'&'+params:'');
-    var res=await fetch(url);
-    var text=await res.text();
-    return JSON.parse(text);
-  }catch(e){return null;}
-}
-async function apiPost(payload){
-  if(!SCRIPT_URL()) return null;
-  try{
-    var res=await fetch(SCRIPT_URL(),{method:'POST',body:JSON.stringify(payload)});
-    var text=await res.text();
-    return JSON.parse(text);
-  }catch(e){return null;}
-}
+    const subject = '[Karigar] ✅ Approved — Please arrange for ' + booking.date;
 
-// ─── FORM RESET ───────────────────────────────────────────────────────────────
-function resetForm(){
-  selDur=null;selDate=null;curStep=1;calBk={};
-  ['f-name','f-phone','f-email','f-work-details'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('f-type').value='';
-  document.getElementById('f-type-other').value='';
-  document.getElementById('other-type-wrap').classList.add('hidden');
-  ['food','stationery','tv','wifi','chairs','vc','other'].forEach(function(key){
-    var cb = document.getElementById('req-cb-' + key);
-    if(cb) cb.checked = false;
-    var wrap = document.getElementById('req-wrap-' + key);
-    if(wrap) wrap.classList.add('hidden');
-    var note = document.getElementById('req-note-' + key);
-    if(note) note.value = '';
-  });
-  clearSelectedLabs();
-  document.querySelectorAll('.dur-card').forEach(function(c){c.classList.remove('selected');});
-  document.getElementById('btn-n1').disabled=true;
-  for(var i=1;i<=6;i++){var e=document.getElementById('step-'+i);if(e)e.classList.add('hidden');}
-  document.getElementById('step-1').classList.remove('hidden');
-  [1,2,3,4,5].forEach(function(i){var s=document.getElementById('si-'+i);if(s)s.classList.remove('active','done');});
-  document.getElementById('si-1').classList.add('active');
-  document.getElementById('day-panel').classList.add('hidden');
-}
+    const body =
+      'Hi ' + contact.name + ',\n\n' +
+      'A session has been approved and requires your arrangements.\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'BOOKING DETAILS\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'Guest      : ' + booking.name     + '\n' +
+      'Date       : ' + booking.date     + '\n' +
+      'Time       : ' + booking.time + ' → ' + booking.endTime + '\n' +
+      'Session    : ' + booking.duration + '\n' +
+      'Type       : ' + (booking.typeOfWork || '—') + '\n' +
+      'Labs       : ' + booking.labs     + '\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      'YOUR ACTION ITEMS (' + contact.role + ')\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+      itemLines + '\n\n' +
+      'Please ensure everything is ready before the session starts.\n\n' +
+      'Karigar Booking System\n' +
+      'Lend A Hand India · Pune';
 
-// ─── UTILITY HELPERS ─────────────────────────────────────────────────────────
-function v(id){return document.getElementById(id).value.trim();}
-function pad(n){return String(n).padStart(2,'0');}
-function toKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
-function fmtT(h,m,ap){return h+':'+(m===0?'00':pad(m))+' '+ap;}
-function toMins(h,m,ap){var h2=h%12;if(ap==='PM')h2+=12;return h2*60+m;}
-function parseT(ts){if(!ts)return null;var m=(ts+'').match(/(\d+):(\d+)\s*(AM|PM)/i);return m?toMins(parseInt(m[1]),parseInt(m[2]),m[3].toUpperCase()):null;}
-function hide(id){document.getElementById(id).classList.add('hidden');}
-function showEl(el,txt){el.textContent=txt;el.classList.remove('hidden');}
-function rsMinDate(){return toKey(minLeadDate());}
-function rsMaxDate(){var d=new Date(minLeadDate());d.setDate(d.getDate()+365);return toKey(d);}
-function escapeHtml(str){
-  return String(str||'').replace(/[&<>"']/g, function(ch){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    GmailApp.sendEmail(email, subject, body);
   });
 }
-
-// ── CHANGE 4: new JS helper functions ──
-function toggleOtherType(val){
-  document.getElementById('other-type-wrap').classList.toggle('hidden', val !== 'Other');
-  if(val !== 'Other') document.getElementById('f-type-other').value = '';
-}
-
-var REQ_KEYS = ['food','stationery','tv','wifi','chairs','vc','other'];
-
-function toggleReq(key){
-  var cb   = document.getElementById('req-cb-' + key);
-  cb.checked = !cb.checked;
-  var wrap = document.getElementById('req-wrap-' + key);
-  wrap.classList.toggle('hidden', !cb.checked);
-  if(cb.checked){
-    setTimeout(function(){ document.getElementById('req-note-' + key).focus(); }, 50);
-  } else {
-    document.getElementById('req-note-' + key).value = '';
-  }
-}
-
-function getSelectedReqs(){
-  var out = [];
-  REQ_KEYS.forEach(function(key){
-    var cb = document.getElementById('req-cb-' + key);
-    if(cb && cb.checked){
-      var note = (document.getElementById('req-note-' + key).value || '').trim();
-      var label = cb.value;
-      out.push(note ? label + ': ' + note : label);
-    }
-  });
-  return out;
-}
-
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-updateCalEmbed();
-startAutoRefresh();
-</script>
-</body>
-</html>
