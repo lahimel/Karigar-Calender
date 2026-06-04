@@ -211,6 +211,7 @@ textarea{min-height:96px;resize:vertical}
 .stb-Approved{background:var(--green-bg);color:var(--green)}
 .stb-Declined{background:var(--red-bg);color:var(--red)}
 .stb-Rescheduled{background:#F0ECE6;color:#7A7571}
+.stb-Cancelled{background:#e2e8f0;color:#475569}
 .stmsg{margin-top:10px;padding:9px 13px;border-radius:8px;font-weight:600;font-size:.83rem}
 .sm-a{background:var(--green-bg);color:var(--green)}
 .sm-d{background:var(--red-bg);color:var(--red)}
@@ -863,9 +864,10 @@ async function checkStatus(){
   if(!data){out.innerHTML='<div class="alert ae" style="margin-top:12px">Status lookup is not connected yet. Add your Apps Script URL in BACKEND_SCRIPT_URL inside the HTML file.</div>';return;}
   if(data.success&&data.bookings&&data.bookings.length>0){
     out.innerHTML=data.bookings.map(function(b){
-      var mc=b.status==='Approved'?'sm-a':b.status==='Declined'?'sm-d':'sm-p';
+      var mc=b.status==='Approved'?'sm-a':b.status==='Declined'||b.status==='Cancelled'?'sm-d':'sm-p';
       var mt=b.status==='Approved'?'✅ Confirmed! The Karigar team will be ready at your start time.'
         :b.status==='Declined'?'❌ Not approved. Please book a different slot.'
+        :b.status==='Cancelled'?'🚫 This session was cancelled by the team. Please book a new slot.'
         :'⏳ Pending review — you\'ll be notified once confirmed.';
       var canReschedule=(b.status==='Pending'||b.status==='Approved');
       return '<div class="stcard">'
