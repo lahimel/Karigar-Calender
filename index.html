@@ -400,9 +400,10 @@ textarea{min-height:96px;resize:vertical}
       <div id="form-err" class="alert ae hidden"></div>
       <div class="fg"><label>Full Name *</label><input id="f-name" type="text"/></div>
       <div class="fg"><label>Phone Number *</label><input id="f-phone" type="tel"/></div>
-      <div class="fg"><label>Email Address *</label><input id="f-email" type="email"/></div><div class="fg">
+      <div class="fg"><label>Email Address *</label><input id="f-email" type="email"/></div>
+      <div class="fg">
         <label>Type of Work *</label>
-        <select id="f-type">
+        <select id="f-type" onchange="toggleOtherType(this.value)">
           <option value="">— Select type of work —</option>
           <option>Karigar Express</option>
           <option>Exposure Visit</option>
@@ -412,6 +413,9 @@ textarea{min-height:96px;resize:vertical}
           <option>Birthday Celebration</option>
           <option>Other</option>
         </select>
+        <div id="other-type-wrap" class="hidden" style="margin-top:10px">
+          <input id="f-type-other" type="text" placeholder="Please describe your session type…"/>
+        </div>
       </div>
       <div class="fg">
         <label>Select Lab * (choose one or more)</label>
@@ -431,6 +435,24 @@ textarea{min-height:96px;resize:vertical}
         <label>What is it about? *</label>
         <textarea id="f-work-details"></textarea>
       </div>
+
+      <!-- ── CHANGE 3: Additional Requirements section ── -->
+      <div class="fg">
+        <label>Additional Requirements <span style="font-weight:400;color:var(--muted)">(Optional)</span></label>
+        <div class="checkbox-grid">
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Food &amp; Refreshments"/>🍽️ Food &amp; Refreshments</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Stationery"/>✏️ Stationery</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="TV / Projector"/>📺 TV / Projector</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Wi-Fi"/>📶 Wi-Fi</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Extra Chairs / Tables"/>🪑 Extra Chairs / Tables</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Video Conferencing"/>💻 Video Conferencing</label>
+          <label class="checkbox-pill"><input type="checkbox" name="f-req" value="Other" onchange="toggleReqOther(this.checked)"/>➕ Other</label>
+        </div>
+        <div id="req-other-wrap" class="hidden" style="margin-top:10px">
+          <input id="f-req-other" type="text" placeholder="Describe your additional requirement…"/>
+        </div>
+      </div>
+
       <div class="btn-row">
         <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(3)">← Back</button>
         <button class="btn btn-p" onclick="goStep(5)">Review Booking →</button>
@@ -583,8 +605,10 @@ function pickDur(type,el){
 function goStep(n){
   if(n===5){
     var err=document.getElementById('form-err');
+    // ── CHANGE 5: updated validation ──
     var nm=v('f-name'),ph=v('f-phone'),em=v('f-email'),type=v('f-type'),details=v('f-work-details'),labs=getSelectedLabs();
     if(!nm||!ph||!em||!type||!details||!labs.length){showEl(err,'Please fill in all required fields, including at least one lab.');return;}
+    if(type==='Other' && !document.getElementById('f-type-other').value.trim()){showEl(err,'Please specify your "Other" session type.');return;}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){showEl(err,'Enter a valid email address.');return;}
     if(!/^\d{10}$/.test(ph)){showEl(err,'Phone must be exactly 10 digits.');return;}
     err.classList.add('hidden');
@@ -774,6 +798,7 @@ function checkConflict(){
 
 // ─── SUMMARY & SUBMIT ────────────────────────────────────────────────────────
 function buildSummary(){
+  // ── CHANGE 6: added Requirements row ──
   document.getElementById('summ').innerHTML=
     row('⏱ Session Type','<span class="pill pill-p">'+DUR_LBL[selDur]+'</span>')+
     row('📅 Date',selDate.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'}))+
@@ -784,7 +809,8 @@ function buildSummary(){
     row('📝 Details',escapeHtml(v('f-work-details')))+
     row('👤 Name',v('f-name'))+
     row('📞 Phone',v('f-phone'))+
-    row('📧 Email',v('f-email'));
+    row('📧 Email',v('f-email'))+
+    row('📋 Requirements',escapeHtml(getSelectedReqs().join(', ')||'None'));
 }
 function row(l,val){return '<div class="sr"><span class="sl2">'+l+'</span><span class="sv">'+val+'</span></div>';}
 
@@ -795,6 +821,7 @@ async function submitBooking(){
   var typeOfWork=v('f-type');
   var labs=getSelectedLabs();
   var workDetails=v('f-work-details');
+  // ── CHANGE 7: added typeOtherDetail and additionalRequirements to payload ──
   var payload={
     action:'book',
     duration:DUR_LBL[selDur],
@@ -803,6 +830,8 @@ async function submitBooking(){
     typeOfWork:typeOfWork,
     labs:labs,
     workDetails:workDetails,
+    typeOtherDetail:(typeOfWork==='Other'?(document.getElementById('f-type-other').value.trim()):''),
+    additionalRequirements:getSelectedReqs(),
     date:selDate.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),
     dateKey:toKey(selDate),
     time:fmtT(sH,sM,sAP), endTime:fmtT(eH,eM,eAP)
@@ -953,7 +982,12 @@ function resetForm(){
   selDur=null;selDate=null;curStep=1;calBk={};
   ['f-name','f-phone','f-email','f-work-details'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-type').value='';
+  document.getElementById('f-type-other').value='';
+  document.getElementById('other-type-wrap').classList.add('hidden');
+  document.getElementById('f-req-other').value='';
+  document.getElementById('req-other-wrap').classList.add('hidden');
   clearSelectedLabs();
+  document.querySelectorAll('input[name="f-req"]').forEach(function(el){el.checked=false;});
   document.querySelectorAll('.dur-card').forEach(function(c){c.classList.remove('selected');});
   document.getElementById('btn-n1').disabled=true;
   for(var i=1;i<=6;i++){var e=document.getElementById('step-'+i);if(e)e.classList.add('hidden');}
@@ -978,6 +1012,23 @@ function escapeHtml(str){
   return String(str||'').replace(/[&<>"']/g, function(ch){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
   });
+}
+
+// ── CHANGE 4: new JS helper functions ──
+function toggleOtherType(val){
+  document.getElementById('other-type-wrap').classList.toggle('hidden', val !== 'Other');
+  if(val !== 'Other') document.getElementById('f-type-other').value = '';
+}
+
+function toggleReqOther(checked){
+  document.getElementById('req-other-wrap').classList.toggle('hidden', !checked);
+  if(!checked) document.getElementById('f-req-other').value = '';
+}
+
+function getSelectedReqs(){
+  var reqs = Array.from(document.querySelectorAll('input[name="f-req"]:checked')).map(function(el){ return el.value; });
+  var otherText = (document.getElementById('f-req-other').value || '').trim();
+  return reqs.map(function(r){ return (r === 'Other' && otherText) ? 'Other: ' + otherText : r; });
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
