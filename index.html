@@ -42,9 +42,10 @@ body{
 
 /* ─── TOP SHELL ───────────────────────────────────────────── */
 .top-shell{
+  min-height:100vh;
   display:flex;
   align-items:center;
-  padding:80px max(5vw,24px) 72px;
+  padding:80px max(5vw,24px);
 }
 .ts-inner{
   max-width:1100px;
@@ -738,7 +739,7 @@ textarea{min-height:96px;resize:vertical}
 @media(max-width:800px){
   .ts-inner{grid-template-columns:1fr;gap:36px}
   .ts-wordmark{font-size:clamp(3rem,13vw,4.5rem)}
-  .top-shell{padding:48px 20px 40px}
+  .top-shell{min-height:auto;padding:60px 20px 48px}
   .ts-tagline{max-width:100%}
   .content-inner .card,.content-inner #tab-status{max-width:100%;margin-left:0}
 }
