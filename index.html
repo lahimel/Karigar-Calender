@@ -1481,7 +1481,7 @@ async function checkStatus(){
         var showRebook=!rescheduleMode&&(b.status==='Declined'||b.status==='Cancelled');
         return '<div class="stcard">'
           +'<div class="stcard-head"><strong>'+(b.typeOfWork||b.service||'—')+'</strong><span class="stb stb-'+b.status+'">'+b.status+'</span></div>'
-          +row('⏱ Session Type',b.duration||'—')+row('🏷 Type of Work',b.typeOfWork||b.service||'—')+row('🏫 Labs',b.labs||'—')+row('📝 Details',b.workDetails||'—')+row('📅 Date',b.date)+row('🕐 From',b.time||'—')+row('🕔 To',b.endTime||'—')
+          +row('⏱ Session Type',b.duration||'—')+row('🏷 Type of Work',b.typeOfWork||b.service||'—')+row('🏫 Labs',b.labs||'—')+row('📝 Details',b.workDetails||'—')+row('📋 Requirements',escapeHtml(b.additionalRequirements||'None'))+row('📅 Date',b.date)+row('🕐 From',b.time||'—')+row('🕔 To',b.endTime||'—')
           +'<div class="stmsg '+mc+'">'+mt+'</div>'
           +(showRebook?'<div style="margin-top:12px"><button class="btn btn-p" style="font-size:.82rem;padding:9px 16px;width:auto" onclick="showSection(\'book\',document.getElementById(\'ai-book\'))">📅 Book a New Session</button></div>':'')
           +(showReschedule?rescheduleBlock(b):'')
