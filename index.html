@@ -38,13 +38,18 @@ body{
   color:var(--text);
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
+  display:flex;
+  flex-direction:column;
 }
+.top-shell{flex:0 0 auto}
+.content-wrap{flex:0 0 auto}
+.site-footer{margin-top:auto}
 
 /* ─── TOP SHELL ───────────────────────────────────────────── */
 .top-shell{
   display:flex;
   align-items:center;
-  padding:100px max(5vw,24px);
+  padding:72px max(5vw,24px) 56px;
 }
 .ts-inner{
   max-width:1100px;
@@ -199,7 +204,7 @@ body{
 /* ─── CONTENT AREA ────────────────────────────────────────── */
 .content-wrap{
   background:var(--bg);
-  padding:48px max(5vw,24px) 80px;
+  padding:24px max(5vw,24px) 60px;
 }
 .content-inner{
   max-width:1100px;
@@ -738,7 +743,7 @@ textarea{min-height:96px;resize:vertical}
 @media(max-width:800px){
   .ts-inner{grid-template-columns:1fr;gap:36px}
   .ts-wordmark{font-size:clamp(3rem,13vw,4.5rem)}
-  .top-shell{min-height:auto;padding:60px 20px 48px}
+  .top-shell{min-height:auto;padding:48px 20px 36px}
   .ts-tagline{max-width:100%}
   .content-inner .card,.content-inner #tab-status{max-width:100%;margin-left:0}
 }
@@ -1051,7 +1056,7 @@ textarea{min-height:96px;resize:vertical}
         <div class="sbox">
           <div style="font-size:3rem">🎉</div>
           <h2>Request Submitted!</h2>
-          <p>Your session request is awaiting approval from the Karigar team.</p>
+          <p>Your session request is pending approval from the Karigar team.</p>
           <p>You'll receive an email once your booking is confirmed.</p>
           <div class="bid" id="bid"></div>
           <p style="font-size:.73rem;color:var(--muted)">Save this ID to track or reschedule your booking</p>
@@ -1703,11 +1708,6 @@ function showSection(which, cardEl) {
   // Reveal the content area
   var cw = document.getElementById('content-wrap');
   cw.classList.remove('hidden');
-
-  // Smooth scroll to content
-  setTimeout(function() {
-    cw.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 50);
 }
 
 /** Scrolls back to the top shell so the user can choose a different action */
