@@ -454,41 +454,42 @@ body{
 
 /* ─── DAY PANEL ───────────────────────────────────────────── */
 .day-panel{
-  border:1px solid var(--border);
+  border:1.5px solid var(--border);
   border-radius:var(--r);
   overflow:hidden;
   margin-bottom:14px;
 }
 .dp-head{
-  background:#1A1410;
-  color:white;
+  background:var(--surface);
+  color:var(--text);
   padding:11px 16px;
   font-size:.83rem;
   font-weight:600;
   display:flex;
   align-items:center;
   justify-content:space-between;
+  border-bottom:1px solid var(--border);
 }
-.dp-head small{opacity:.5;font-size:.71rem;font-weight:400}
-.dp-body{background:#130F0C;padding:2px 0 4px}
+.dp-head small{color:var(--muted);font-size:.71rem;font-weight:400}
+.dp-body{background:var(--bg);padding:2px 0 4px}
 .dp-event{
   display:grid;
   grid-template-columns:4px 1fr auto;
   align-items:center;
   gap:10px;
   padding:10px 14px;
-  border-bottom:1px solid #201A17;
+  border-bottom:1px solid var(--border);
 }
 .dp-event:last-child{border:none}
 .dp-bar{border-radius:4px;align-self:stretch;min-height:36px}
 .bar-a{background:var(--green)}
 .bar-p{background:#7BA7C2}
-.dp-name{color:#F5F0EA;font-weight:600;font-size:.83rem}
-.dp-meta{color:#8A837C;font-size:.72rem;margin-top:2px}
+.dp-name{color:var(--text);font-weight:600;font-size:.83rem}
+.dp-meta{color:var(--muted);font-size:.72rem;margin-top:2px}
 .dp-badge{font-size:.66rem;font-weight:700;padding:3px 9px;border-radius:20px}
 .db-a{background:var(--green);color:white}
 .db-p{background:#7BA7C2;color:white}
-.dp-empty{color:#8A837C;font-style:italic;padding:14px 16px;font-size:.81rem}
+.dp-empty{color:var(--muted);font-style:italic;padding:14px 16px;font-size:.81rem}
 
 .legend{
   display:flex;gap:14px;flex-wrap:wrap;font-size:.71rem;
@@ -897,11 +898,6 @@ textarea{min-height:96px;resize:vertical}
 
         <!-- Day bookings panel -->
         <div id="day-panel" class="day-panel hidden"></div>
-        <div class="legend">
-          <div class="leg"><div class="leg-dot" style="background:#4D7A50"></div> Approved</div>
-          <div class="leg"><div class="leg-dot" style="background:#7BA7C2"></div> Pending</div>
-        </div>
-        <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px">Sundays are open · Approved sessions appear on the calendar above</p>
 
         <div class="btn-row">
           <button class="btn btn-s" style="flex:0 0 auto;width:80px" onclick="goStep(1)">← Back</button>
@@ -1277,19 +1273,16 @@ function pickTileDate(key){
 function showDayPanel(key,date){
   var p=document.getElementById('day-panel');
   var bks=calBk[key]||[];
+  if(bks.length===0){p.classList.add('hidden');return;}
   var ds=date.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  var h='<div class="dp-head"><span>📅 '+ds+'</span><small>'+(bks.length>0?bks.length+' booking(s)':'No bookings yet')+'</small></div><div class="dp-body">';
-  if(bks.length===0){
-    h+='<div class="dp-empty">No bookings in our system for this date yet.</div>';
-  } else {
-    bks.forEach(function(b){
-      var app=b.status==='Approved';
-      h+='<div class="dp-event"><div class="dp-bar '+(app?'bar-a':'bar-p')+'"></div>'
-        +'<div><div class="dp-name">👤 '+(b.name||'—')+'</div>'
-        +'<div class="dp-meta">🕐 '+(b.time||'')+'→'+(b.endTime||'?')+' &nbsp;·&nbsp; '+(b.duration||'')+'</div></div>'
-        +'<span class="dp-badge '+(app?'db-a':'db-p')+'">'+b.status+'</span></div>';
-    });
-  }
+  var h='<div class="dp-head"><span>'+ds+'</span><small>'+bks.length+' booking(s)</small></div><div class="dp-body">';
+  bks.forEach(function(b){
+    var app=b.status==='Approved';
+    h+='<div class="dp-event"><div class="dp-bar '+(app?'bar-a':'bar-p')+'"></div>'
+      +'<div><div class="dp-name">'+(b.name||'—')+'</div>'
+      +'<div class="dp-meta">'+(b.time||'')+'→'+(b.endTime||'?')+' &nbsp;·&nbsp; '+(b.duration||'')+'</div></div>'
+      +'<span class="dp-badge '+(app?'db-a':'db-p')+'">'+b.status+'</span></div>';
+  });
   h+='</div>';
   p.innerHTML=h; p.classList.remove('hidden');
 }
